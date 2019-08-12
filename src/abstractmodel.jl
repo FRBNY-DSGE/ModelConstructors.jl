@@ -10,7 +10,7 @@ end
     if i <= (j = length(m.parameters))
         return m.parameters[i]
     else
-        @error "Index is greater than number of parameters"
+        return m.steady_state[i-j]
     end
 end
 
@@ -20,7 +20,7 @@ end
     @inbounds if i <= (j = length(m.parameters))
         return m.parameters[i]
     else
-        @error "Key is not a model parameter"
+        return m.steady_state[i-j]
     end
 end
 
@@ -33,7 +33,9 @@ end
         end
         return param
     else
-        @error "Index is greater than number of parameters"
+        steady_state_param = m.steady_state[i-j]
+        steady_state_param.value = value
+        return steady_state_param
     end
 end
 
@@ -48,7 +50,9 @@ Base.setindex!(m::AbstractModel, value::Array, k::Symbol) = Base.setindex!(m, va
         end
         return param
     else
-        @error "Index is greater than number of parameters"
+        steady_state_param = m.steady_state[i-j]
+        steady_state_param.value = value
+        return steady_state_param
     end
 end
 
@@ -58,13 +62,13 @@ setindex!(m::AbstractModel, param::AbstractParameter, i::Integer)
 ```
 
 If `i`<length(m.parameters), overwrites m.parameters[i] with
-param.
+param. Otherwise, overwrites m.steady_state[i-length(m.parameters).
 """
 @inline function Base.setindex!(m::AbstractModel, param::AbstractParameter, i::Integer)
     if i <= (j = length(m.parameters))
         m.parameters[i] = param
     else
-        @error "Index is greater than number of parameters"
+        m.steady_state[i-j] = param
     end
     return param
 end
@@ -95,6 +99,57 @@ function (<=)(m::AbstractModel{T}, p::AbstractParameter{T}) where T
     else
         # overwrite the previous parameter with the new one
         setindex!(m, p, p.key)
+    end
+end
+
+
+"""
+```
+(<=)(m::AbstractModel{T}, ssp::Union{SteadyStateParameter,SteadyStateParameterArray}) where {T}
+```
+
+Add a new steady-state value to the model by appending `ssp` to the `m.steady_state` and
+adding `ssp.key` to `m.keys`.
+"""
+function (<=)(m::AbstractModel{T}, ssp::Union{SteadyStateParameter, SteadyStateParameterArray}) wher\
+e {T}
+
+    if !in(ssp.key, keys(m.keys))
+        new_param_index = length(m.keys) + 1
+
+        # append ssp to steady_state vector
+        push!(m.steady_state, ssp)
+
+        # add parameter location to dict
+        setindex!(m.keys, new_param_index, ssp.key)
+    else
+        # overwrite the previous parameter with the new one
+        setindex!(m, ssp, ssp.key)
+    end
+end
+
+"""
+```
+(<=)(m::AbstractModel{T}, ssp::SteadyStateParameterGrid) where {T}
+
+```
+
+Add a new steady-state value to the model by appending `ssp` to the `m.steady_state` and
+adding `ssp.key` to `m.keys`.
+"""
+function (<=)(m::AbstractModel{T}, ssp::SteadyStateParameterGrid) where {T}
+
+    if !in(ssp.key, keys(m.keys))
+        new_param_index = length(m.keys) + 1
+
+        # append ssp to steady_state vector
+        push!(m.steady_state, ssp)
+
+        # add parameter location to dict
+        setindex!(m.keys, new_param_index, ssp.key)
+    else
+        # overwrite the previous parameter with the new one
+        setindex!(m, ssp, ssp.key)
     end
 end
 
