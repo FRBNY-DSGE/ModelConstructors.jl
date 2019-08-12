@@ -1,6 +1,6 @@
 module ModelConstructors
 
-    using Dates, Distributed, Distributions, Nullables, Printf, SpecialFunctions
+    using Dates, Distributed, Distributions, Nullables, Printf, Random, SpecialFunctions
 
     export
         # distributions_ext.jl
