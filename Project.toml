@@ -1,0 +1,6 @@
+authors = ["Ethan Matlin <ethanmatlin@gmail.com>"]
+name = "ModelConstructors"
+uuid = "e47e5152-bd14-11e9-1b46-c951f0a7041d"
+version = "0.1.0"
+
+[deps]
