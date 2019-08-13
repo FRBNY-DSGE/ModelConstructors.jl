@@ -1,3 +1,4 @@
+
 abstract type AbstractModel{T} end
 
 function Base.show(io::IO, m::AbstractModel)
@@ -111,8 +112,7 @@ end
 Add a new steady-state value to the model by appending `ssp` to the `m.steady_state` and
 adding `ssp.key` to `m.keys`.
 """
-function (<=)(m::AbstractModel{T}, ssp::Union{SteadyStateParameter, SteadyStateParameterArray}) wher\
-e {T}
+function (<=)(m::AbstractModel{T}, ssp::Union{SteadyStateParameter, SteadyStateParameterArray}) where {T}
 
     if !in(ssp.key, keys(m.keys))
         new_param_index = length(m.keys) + 1
@@ -157,9 +157,58 @@ Distributions.logpdf(m::AbstractModel) = logpdf(m.parameters)
 Distributions.pdf(m::AbstractModel) = exp(logpdf(m))
 
 # Convenience functions
+n_states(m::AbstractModel)                  = length(m.endogenous_states)
+n_states_augmented(m::AbstractModel)        = n_states(m) + length(m.endogenous_states_augmented)
+n_shocks_exogenous(m::AbstractModel)        = length(m.exogenous_shocks)
+n_shocks_expectational(m::AbstractModel)    = length(m.expected_shocks)
+n_observables(m::AbstractModel)             = length(m.observables)
+n_pseudo_observables(m::AbstractModel)      = length(m.pseudo_observables)
+n_equilibrium_conditions(m::AbstractModel)  = length(m.equilibrium_conditions)
 n_parameters(m::AbstractModel)              = length(m.parameters)
 n_parameters_steady_state(m::AbstractModel) = length(m.steady_state)
 n_parameters_free(m::AbstractModel)         = sum([!α.fixed for α in m.parameters])
+
+
+"""
+```
+get_dict(m, class, index)
+```
+"""
+function get_dict(m::AbstractModel, class::Symbol)
+    if class == :states
+        m.endogenous_states
+    elseif class == :obs
+        m.observables
+    elseif class == :pseudo
+        m.pseudo_observables
+    elseif class in [:shocks, :stdshocks]
+        m.exogenous_shocks
+    else
+        throw(ArgumentError("Invalid class: $class. Must be :states, :obs, :pseudo, :shocks, or :stdshocks"))
+    end
+end
+
+"""
+```
+get_key(m, class, index)
+```
+
+Returns the name of the state (`class = :states`), observable (`:obs`),
+pseudo-observable (`:pseudo`), or shock (`:shocks` or `:stdshocks`)
+corresponding to the given `index`.
+"""
+function get_key(m::AbstractModel, class::Symbol, index::Int)
+    dict = get_dict(m, class)
+    out = Base.filter(key -> dict[key] == index, collect(keys(dict)))
+    if length(out) == 0
+        error("Key corresponding to index $index not found for class: $class")
+    elseif length(out) > 1
+        error("Multiple keys corresponding to index $index found for class: $class")
+    else
+        return out[1]
+    end
+end
+
 
 # Interface for I/O settings
 spec(m::AbstractModel)         = m.spec
@@ -348,22 +397,6 @@ function filestring(d::Vector{String})
     return "_" * join(d, "_")
 end
 
-
-"""
-```
-update!(m::AbstractModel, values::Vector{T}) where T<:AbstractFloat
-```
-
-Update `m.parameters` with `values`, recomputing the steady-state parameter values.
-
-### Arguments:
-- `m`: the model object
-- `values`: the new values to assign to non-steady-state parameters.
-"""
-function update!(m::AbstractModel, values::Vector{T}) where T<:AbstractFloat
-    DSGE.update!(m.parameters, values)
-    steadystate!(m)
-end
 
 """
 ```

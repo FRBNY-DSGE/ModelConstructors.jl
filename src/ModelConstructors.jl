@@ -2,9 +2,10 @@ module ModelConstructors
 
     using Dates, Distributed, Distributions, Nullables, Printf, Random, SpecialFunctions
 
+    import Base.isempty, Base.<, Base.min, Base.max
     export
         # distributions_ext.jl
-        BetaAlt, GammaAlt, RootInverseGamma, DegenerateMvNormal, DegenerateDiagMvTDist, MatrixNormal,
+        BetaAlt, GammaAlt, RootInverseGamma, DegenerateMvNormal, DegenerateDiagMvTDist, MatrixNormal, <=,
 
         # settings.jl
         Setting, get_setting,
@@ -14,11 +15,11 @@ module ModelConstructors
 
         # abstractmodel.jl
         AbstractModel, description,
-        n_parameters,
-        n_parameters_free, get_dict, get_key,
+        n_states, n_states_augmented, n_shocks_exogenous, n_shocks_expectational,
+    n_equilibrium_conditions, n_observables, n_parameters, n_parameters_steady_states, n_parameters_free, n_pseudo_observables, get_dict, get_key,
         spec, subspec, saveroot, dataroot,
         data_vintage, data_id, cond_vintage,
-        logpath, workpath, rawpath, tablespath, figurespath, inpath,
+        logpath, workpath, rawpath, tablespath, figurespath, inpath, filestring_base, workpath, rawpath, tablespath, figurespath, logpath, savepath, inpath, filestring,
 
         # parameters.jl
         parameter, Transform, NullablePrior, AbstractParameter,

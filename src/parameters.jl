@@ -299,7 +299,7 @@ function parameter(key::Symbol,
                    value::T,
                    valuebounds::Interval{T} = (value,value),
                    transform_parameterization::Interval{T} = (value,value),
-                   transform::U             = DSGE.Untransformed(),
+                   transform::U             = Untransformed(),
                    prior::NullableOrPrior   = NullablePrior();
                    fixed::Bool              = true,
                    scaling::Function        = identity,
@@ -342,7 +342,7 @@ function parameter(key::Symbol,
 end
 
 function parameter(key::Symbol,
-                   prior::ContinuousUnivariateDistribution,
+                   prior::ContinuousUnivariateDistribution;
                    fixed::Bool = false,
                    description::String = "No description available",
                    tex_label::String = "")
