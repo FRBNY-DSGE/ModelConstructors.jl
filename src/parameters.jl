@@ -304,7 +304,7 @@ function parameter(key::Symbol,
                    fixed::Bool              = true,
                    scaling::Function        = identity,
                    description::String = "No description available.",
-                   tex_label::String = "") where {T, U <:Transform}
+                   tex_label::String = "") where {T <: Float64, U <:Transform}
 
     # If fixed=true, force bounds to match and leave prior as null.  We need to define new
     # variable names here because of lexical scoping.
@@ -346,7 +346,7 @@ function parameter(key::Symbol,
                    fixed::Bool = false,
                    description::String = "No description available",
                    tex_label::String = "")
-    return parameter(key, NaN, (NaN, NaN), (NaN, NaN), prior, fixed, description, tex_label)
+    return parameter(key, NaN, (NaN, NaN), (NaN, NaN), Untransformed(), prior, fixed, description, tex_label)
 end
 
 
