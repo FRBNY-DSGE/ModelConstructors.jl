@@ -1,6 +1,6 @@
 # using ModelConstructors
 include("../../../src/ModelConstructors.jl")
-using FredData, DSGE, Dates, DataFrames, OrderedCollections
+using FredData, DSGE, Dates, DataFrames, OrderedCollections, Distributions
 include("capm.jl")
 
 ### Estimate Sharpe's single factor model

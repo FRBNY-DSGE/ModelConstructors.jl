@@ -39,23 +39,23 @@ function model_settings!(m::CAPM)
 end
 
 function init_parameters!(m::CAPM)
-    m <= parameter(:α1, 0., (-1e5, 1e5), (-1e5, 1e5), Untransformed(), Normal(0, 1e3),
+    m <= parameter(:α1, 0., (-1e5, 1e5), (-1e5, 1e5), DSGE.Untransformed(), Normal(0, 1e3),
                    fixed = false)
-    m <= parameter(:β1, 0., (-1e5, 1e5), (-1e5, 1e5), Untransformed(), Normal(0, 1e3),
+    m <= parameter(:β1, 0., (-1e5, 1e5), (-1e5, 1e5), DSGE.Untransformed(), Normal(0, 1e3),
                    fixed = false)
-    m <= parameter(:σ1, 1., (1e-5, 1e5), (1e-5, 1e5), SquareRoot(), Uniform(0, 1e3),
+    m <= parameter(:σ1, 1., (1e-5, 1e5), (1e-5, 1e5), DSGE.SquareRoot(), Uniform(0, 1e3),
                    fixed = false)
-    m <= parameter(:α2, 0., (-1e5, 1e5), (-1e5, 1e5), Untransformed(), Normal(0, 1e3),
+    m <= parameter(:α2, 0., (-1e5, 1e5), (-1e5, 1e5), DSGE.Untransformed(), Normal(0, 1e3),
                    fixed = false)
-    m <= parameter(:β2, 0., (-1e5, 1e5), (-1e5, 1e5), Untransformed(), Normal(0, 1e3),
+    m <= parameter(:β2, 0., (-1e5, 1e5), (-1e5, 1e5), DSGE.Untransformed(), Normal(0, 1e3),
                    fixed = false)
-    m <= parameter(:σ2, 1., (1e-5, 1e5), (1e-5, 1e5), SquareRoot(), Uniform(0, 1e3),
+    m <= parameter(:σ2, 1., (1e-5, 1e5), (1e-5, 1e5), DSGE.SquareRoot(), Uniform(0, 1e3),
                    fixed = false)
-    m <= parameter(:α3, 0., (-1e5, 1e5), (-1e5, 1e5), Untransformed(), Normal(0, 1e3),
+    m <= parameter(:α3, 0., (-1e5, 1e5), (-1e5, 1e5), DSGE.Untransformed(), Normal(0, 1e3),
                    fixed = false)
-    m <= parameter(:β3, 0., (-1e5, 1e5), (-1e5, 1e5), Untransformed(), Normal(0, 1e3),
+    m <= parameter(:β3, 0., (-1e5, 1e5), (-1e5, 1e5), DSGE.Untransformed(), Normal(0, 1e3),
                    fixed = false)
-    m <= parameter(:σ3, 1., (1e-5, 1e5), (1e-5, 1e5), SquareRoot(), Uniform(0, 1e3),
+    m <= parameter(:σ3, 1., (1e-5, 1e5), (1e-5, 1e5), DSGE.SquareRoot(), Uniform(0, 1e3),
                    fixed = false)
 end
 
