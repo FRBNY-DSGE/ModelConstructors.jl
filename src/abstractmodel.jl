@@ -1,4 +1,3 @@
-
 abstract type AbstractModel{T} end
 
 function Base.show(io::IO, m::AbstractModel)
@@ -75,7 +74,6 @@ param. Otherwise, overwrites m.steady_state[i-length(m.parameters).
 end
 
 Base.setindex!(m::AbstractModel, value, k::Symbol) = Base.setindex!(m, value, m.keys[k])
-
 
 """
 ```
@@ -217,8 +215,8 @@ saveroot(m::AbstractModel)     = get_setting(m, :saveroot)
 dataroot(m::AbstractModel)     = get_setting(m, :dataroot)
 
 # Interface for data
-data_vintage(m::AbstractModel)    = get_setting(m, :data_vintage)
-data_id(m::AbstractModel)         = get_setting(m, :data_id)
+data_vintage(m::AbstractModel) = get_setting(m, :data_vintage)
+data_id(m::AbstractModel)      = get_setting(m, :data_id)
 
 #=
 Build paths to where input/output/results data are stored.
