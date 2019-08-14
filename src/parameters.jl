@@ -358,9 +358,9 @@ SteadyStateParameter(key::Symbol, value::T; description::String = "",
 
 SteadyStateParameter constructor with optional `description` and `tex_label` arguments.
 """
-function SteadyStateParameter(key::Symbol, value::T; description::String = "No description available",
+function SteadyStateParameter(key::Symbol, value::T;
+                              description::String = "No description available",
                               tex_label::String = "") where {T <: Number}
-
     return SteadyStateParameter(key, value, description, tex_label)
 end
 
@@ -424,17 +424,17 @@ function Base.show(io::IO, p::Parameter{T,U}) where {T, U}
 end
 
 function Base.show(io::IO, p::SteadyStateParameter{T}) where {T}
-    @printf io "%s\n" typeof(p)
-    @printf io "(:%s)\n%s\n"      p.key p.description
-    @printf io "LaTeX label: %s\n"     p.tex_label
+    @printf io "%s\n"                 typeof(p)
+    @printf io "(:%s)\n%s\n"          p.key p.description
+    @printf io "LaTeX label: %s\n"    p.tex_label
     @printf io "-----------------------------\n"
     @printf io "value:        %+6f\n" p.value
 end
 
 function Base.show(io::IO, p::SteadyStateParameterGrid{T}) where {T}
-    @printf io "%s\n" typeof(p)
-    @printf io "(:%s)\n%s\n"      p.key p.description
-    @printf io "LaTeX label: %s\n"     p.tex_label
+    @printf io "%s\n"                      typeof(p)
+    @printf io "(:%s)\n%s\n"               p.key p.description
+    @printf io "LaTeX label: %s\n"         p.tex_label
     @printf io "-----------------------------\n"
     @printf io "value:        [%f,...,%f]" p.value[1] p.value[end]
 end
