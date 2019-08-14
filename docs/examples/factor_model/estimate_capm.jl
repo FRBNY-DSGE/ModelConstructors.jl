@@ -1,53 +1,41 @@
-# using ModelConstructors
-include("../../../src/ModelConstructors.jl")
-using FredData, DSGE, Dates, DataFrames, OrderedCollections, Distributions
-include("capm.jl")
+using ModelConstructors, FileIO, Random
 
 ### Estimate Sharpe's single factor model
 # R_{it} = α_i + β_i R_{Mt} + ϵ_{it}, i = 1,...,N; t = 1,...,T
 # where R_{Mt} is the excess return on a market index in time period t,
 # and ϵ_{it} is an i.i.d. normally distributed mean zero shock with variance σ_i^2
 
+### Construct a generic model and populate it with parameters
+capm = GenericModel()
+fn = dirname(@__FILE__)
+capm <= Setting(:dataroot, "$(fn)/../save/input_data/")
+capm <= Setting(:saveroot, "$(fn)/../save/")
+
+capm <= parameter(:α1, 0., (-1e5, 1e5), (-1e5, 1e5), Untransformed(), Normal(0, 1e3),
+                  fixed = false)
+capm <= parameter(:β1, 0., (-1e5, 1e5), (-1e5, 1e5), Untransformed(), Normal(0, 1e3),
+                  fixed = false)
+capm <= parameter(:σ1, 1., (1e-5, 1e5), (1e-5, 1e5), SquareRoot(), Uniform(0, 1e3),
+                  fixed = false)
+capm <= parameter(:α2, 0., (-1e5, 1e5), (-1e5, 1e5), Untransformed(), Normal(0, 1e3),
+                  fixed = false)
+capm <= parameter(:β2, 0., (-1e5, 1e5), (-1e5, 1e5), Untransformed(), Normal(0, 1e3),
+                  fixed = false)
+capm <= parameter(:σ2, 1., (1e-5, 1e5), (1e-5, 1e5), SquareRoot(), Uniform(0, 1e3),
+                  fixed = false)
+capm <= parameter(:α3, 0., (-1e5, 1e5), (-1e5, 1e5), Untransformed(), Normal(0, 1e3),
+                  fixed = false)
+capm <= parameter(:β3, 0., (-1e5, 1e5), (-1e5, 1e5), Untransformed(), Normal(0, 1e3),
+                  fixed = false)
+capm <= parameter(:σ3, 1., (1e-5, 1e5), (1e-5, 1e5), SquareRoot(), Uniform(0, 1e3),
+                  fixed = false)
+
 ### Estimate with SMC
+
+## Get data
 N = 3 # number of asset returns
-
-## Construct data matrix and constant data
-fredseries = Array{FredSeries, 1}(undef, 5)
-f = Fred()
-start_date = Date("2009-12-31", "yyyy-mm-dd")
-end_date = Date("2018-12-31", "yyyy-mm-dd")
-# We use SP500, NASDAQ, russell 300 growth, wilshire micro-cap
-for (i,s) in enumerate(["SP500", "NASDAQCOM", "RU3000GTR", "WILLMICROCAPPR", "DTB3"])
-    fredseries[i] = get_data(f, string(s); frequency = "q",
-                             observation_start = string(start_date),
-                             observation_end   = string(end_date))
-end
-
-# Extract dataframe from each series and merge on date
-data = DataFrame(date = DSGE.get_quarter_ends(start_date, end_date))
-for i in 1:length(fredseries)
-    if isassigned(fredseries, i)
-        series = fredseries[i]
-        series_id = Symbol(series.id)
-        rename!(series.df, :value => series_id)
-        map!(x->DSGE.lastdayofquarter(x), series.df[:date], series.df[:date])
-        data = join(data, series.df[[:date, series_id]], on = :date, kind = :outer)
-    end
-end
-
-# Change the dates to be the last day of each quarter
-n_rows, n_cols = size(data)
-for i = 1:n_rows
-    data[i,:date] = Dates.lastdayofquarter(data[i,:date])
-end
-
-logdata = deepcopy(data)
-logdata[:SP500] = log.(logdata[:SP500])
-logdata[:NASDAQCOM] = log.(logdata[:NASDAQCOM])
-logdata[:RU3000GTR] = log.(logdata[:RU3000GTR])
-logdata[:WILLMICROCAPPR] = log.(logdata[:WILLMICROCAPPR])
-lik_data = diff(Matrix{Float64}(Matrix{Float64}(logdata[[:NASDAQCOM, :RU3000GTR, :WILLMICROCAPPR]])'), dims = 2)
-market_data = Matrix{Float64}((diff(logdata[:SP500]) - logdata[:DTB3][2:end] ./ 100)')
+lik_data = load("../../../save/input_data/capm.jld2", "lik_data")
+market_data = load("../../../save/input_data/capm.jld2", "market_data")
 
 ## Construct likelihood function:
 # likelihood function is just R_{it} ∼ N(α_i + β_i R_{Mt}, σ_i)
@@ -57,9 +45,9 @@ market_data = Matrix{Float64}((diff(logdata[:SP500]) - logdata[:DTB3][2:end] ./ 
 # just take the log of the prices and regress those on each other.
 function likelihood_fnct(p, d)
     # we assume the ordering of (α_i, β_i, σ_i)
-    Σ = Matrix{Float64}(I,N,N)
-    α = Vector{Float64}(N)
-    β = Vector{Float64}(N)
+    Σ = zeros(N,N)
+    α = Vector{Float64}(undef,N)
+    β = Vector{Float64}(undef,N)
     for i in 1:N
         α[i]   = p[i * 3 - 2]
         β[i]   = p[i * 3 - 2]
@@ -76,4 +64,5 @@ function likelihood_fnct(p, d)
     return exp(logprob)
 end
 
-m = CAPM()
+Random.seed!(1793)
+println(likelihood_fnct(capm.parameters, lik_data))

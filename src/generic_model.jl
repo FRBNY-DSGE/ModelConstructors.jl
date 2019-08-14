@@ -33,6 +33,8 @@ function GenericModel(spec::String = "", subspec::String = ""; custom_settings::
     for custom_setting in values(custom_settings)
         m <= custom_setting
     end
+
+    return m
 end
 
 

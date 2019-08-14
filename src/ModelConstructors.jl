@@ -29,7 +29,14 @@ module ModelConstructors
         parameter, Transform, NullablePrior, AbstractParameter,
         Parameter, ParameterVector, ScaledParameter,
         UnscaledParameter, SteadyStateParameter, transform_to_real_line, transform_to_model_space,
-        update, update!, transform_to_model_space, transform_to_real_line, Interval, ParamBoundsError,
+        update, update!, transform_to_model_space, transform_to_real_line, Interval,
+        ParamBoundsError, Untransformed, SquareRoot,
+
+        # distributions_ext.jl
+        Uniform, Exponential, Normal, BetaAlt, GammaAlt, RootInverseGamma, pdf, logpdf, rand,
+        DegenerateMvNormal, rank, length, DgenerateDiagMvTDist, mean, std,
+        MatrixNormal, size, params,
+
         # Generic Model
         GenericModel,
 
