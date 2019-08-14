@@ -18,7 +18,7 @@ function default_settings!(m::AbstractModel)
 
     # Data settings for released and conditional data. Default behavior is to set vintage
     # of data to today's date.
-    vint = Dates.format(now(), DSGE_DATE_FORMAT)
+    vint = Dates.format(now(), "yyyymmdd")
     settings[:data_vintage] = Setting(:data_vintage, vint, true, "vint",
         "Data vintage")
     settings[:data_id] = Setting(:data_id, 3,

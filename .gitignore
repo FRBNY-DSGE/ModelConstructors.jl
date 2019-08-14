@@ -1,2 +1,6 @@
+
 # Data
-save
+save/input_data/
+
+# docs folder
+docs/examples/factor_model/make_data
