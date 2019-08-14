@@ -23,8 +23,8 @@ mutable struct Observable
                                  # parse this to determine source
                                  # (eg consumption per cap gets population and consumption)
 
-    fwd_transform::Function      # corresponds to data_transforms
-                                 # field. Operates on dataframe of levels, that has every data series
+    fwd_transform::Function      # corresponds to data_transforms field.
+                                 # Operates on dataframe of levels, that has every data series
                                  # requested by any observable
 
     rev_transform::Function      # corresponds to getyp, or getyp4q. May take kwargs (untransformed,
