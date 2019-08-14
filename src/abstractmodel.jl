@@ -266,12 +266,13 @@ for (str, fn) in zip(strs, fns)
         @doc $(
         """
         ```
-        $fn(m::AbstractModel, out_type::String, file_name::String="", filestring_addl::Vector{String}=Vector{String}())
+        $fn(m::AbstractModel, out_type::String, file_name::String="",
+            filestring_addl::Vector{String}=Vector{String}())
         ```
 
         Returns path to specific $str output file, creating containing directory as needed. If
-        `file_name` not specified, creates and returns path to containing directory only. Path built
-        as
+        `file_name` not specified, creates and returns path to containing directory only.
+        Path built as
         ```
         <output root>/output_data/<spec>/<subspec>/<out_type>/$str/<file_name>_<filestring>.<ext>
         ```
