@@ -1,6 +1,6 @@
-using ModelConstructors, FileIO, Random
+using ModelConstructors, FileIO, Random, SMC
 
-### Estimate Sharpe's single factor model
+### Estimate a single factor CAPM model
 # R_{it} = α_i + β_i R_{Mt} + ϵ_{it}, i = 1,...,N; t = 1,...,T
 # where R_{Mt} is the excess return on a market index in time period t,
 # and ϵ_{it} is an i.i.d. normally distributed mean zero shock with variance σ_i^2
@@ -65,4 +65,6 @@ function likelihood_fnct(p, d)
 end
 
 Random.seed!(1793)
-println(likelihood_fnct(capm.parameters, lik_data))
+println("Starting to estimate CAPM with SMC . . .")
+@everywhere using SMC, OrderedCollections
+smc(likelihood_fnct, capm.parameters, lik_data)
