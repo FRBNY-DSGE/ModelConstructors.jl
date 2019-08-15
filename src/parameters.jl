@@ -39,6 +39,8 @@ as follows:
     -`SteadyStateParameter{T<:Number}`: Concrete type for steady-state parameters.
 """
 abstract type AbstractParameter{T<:Number} end
+abstract type AbstractVectorParameter{V<:Vector, T<:Number} end
+#abstract type AbstractArrayParameter{A<:Array} end
 
 """
 ```
@@ -52,9 +54,14 @@ equilibrium conditions. The scaled value is stored for convenience, and udpated 
 parameter's value is updated.
 """
 abstract type Parameter{T,U<:Transform} <: AbstractParameter{T} end
+abstract type VectorParameter{V,T,U<:Transform} <: AbstractVectorParameter{V,T} end
+#abstract type ArrayParameter{A,U<:Transform} <: AbstractArrayParameter{A} end
 
-ParameterVector{T} =  Vector{AbstractParameter{T}}
-NullablePrior      =  Nullable{ContinuousUnivariateDistribution}
+ParameterVector{T}       =  Vector{AbstractParameter{T}}
+VectorParameterVector{V,T} =  Vector{AbstractVectorParameter{V,T}}
+#ArrayParameterVector{A}  =  Vector{AbstractArrayParameter{A}}
+NullablePriorUnivariate   =  Nullables.Nullable{ContinuousUnivariateDistribution}
+NullablePriorMultivariate =  Nullables.Nullable{ContinuousMultivariateDistribution}
 
 """
 ```
@@ -88,7 +95,19 @@ mutable struct UnscaledParameter{T,U} <: Parameter{T,U}
     valuebounds::Interval{T}                # bounds of parameter value
     transform_parameterization::Interval{T} # parameters for transformation
     transform::U                            # transformation between model space and real line for optimization
-    prior::NullablePrior                    # prior distribution
+    prior::NullablePriorUnivariate                    # prior distribution
+    fixed::Bool                             # is this parameter fixed at some value?
+    description::String
+    tex_label::String               # LaTeX label for printing
+end
+
+mutable struct UnscaledVectorParameter{V,T,U} <: VectorParameter{V,T,U}
+    key::Symbol
+    value::V                                # parameter value in model space
+    valuebounds::Interval{T}                # bounds of parameter value
+    transform_parameterization::Interval{T} # parameters for transformation
+    transform::U                            # transformation between model space and real line for optimization
+    prior::NullablePriorMultivariate                   # prior distribution
     fixed::Bool                             # is this parameter fixed at some value?
     description::String
     tex_label::String               # LaTeX label for printing
@@ -132,12 +151,27 @@ mutable struct ScaledParameter{T,U} <: Parameter{T,U}
     valuebounds::Interval{T}
     transform_parameterization::Interval{T}
     transform::U
-    prior::NullablePrior
+    prior::NullablePriorUnivariate
     fixed::Bool
     scaling::Function
     description::String
     tex_label::String
 end
+
+mutable struct ScaledVectorParameter{V,T,U} <: VectorParameter{V,T,U}
+    key::Symbol
+    value::V
+    scaledvalue::V
+    valuebounds::Interval{T}
+    transform_parameterization::Interval{T}
+    transform::U
+    prior::NullablePriorMultivariate
+    fixed::Bool
+    scaling::Function
+    description::String
+    tex_label::String
+end
+
 
 """
 ```
@@ -260,9 +294,10 @@ function Base.show(io::IO, p::SteadyStateParameterArray{T}) where {T}
     @printf io "value:        [%+6f,...,%+6f]\n" p.value[1] p.value[end]
 end
 
-hasprior(p::Parameter) = !isnull(p.prior)
+hasprior(p::Union{Parameter, VectorParameter}) = !isnull(p.prior)
 
-NullableOrPrior = Union{NullablePrior, ContinuousUnivariateDistribution}
+NullableOrPriorUnivariate = Union{NullablePriorUnivariate, ContinuousUnivariateDistribution}
+NullableOrPriorMultivariate = Union{NullablePriorMultivariate, ContinuousMultivariateDistribution}
 
 # We want to use value field from UnscaledParameters and
 # SteadyStateParameters in computation, so we alias their union here.
@@ -296,15 +331,15 @@ and value `value`. If `scaling` is given, a `ScaledParameter` object
 is returned.
 """
 function parameter(key::Symbol,
-                   value::T,
+                   value::Union{T, V},
                    valuebounds::Interval{T} = (value,value),
                    transform_parameterization::Interval{T} = (value,value),
                    transform::U             = Untransformed(),
-                   prior::NullableOrPrior   = NullablePrior();
+                   prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate}   = NullablePrior();
                    fixed::Bool              = true,
                    scaling::Function        = identity,
                    description::String = "No description available.",
-                   tex_label::String = "") where {T <: Float64, U <:Transform}
+                   tex_label::String = "") where {V<:Vector, T <: Float64, U <:Transform}
 
     # If fixed=true, force bounds to match and leave prior as null.  We need to define new
     # variable names here because of lexical scoping.
@@ -316,37 +351,59 @@ function parameter(key::Symbol,
     prior_new = prior
 
     if fixed
-        transform_parameterization_new = (value,value)  # value is transformed already
+        # value[1] because need to deal with case in which value is a vector (but if only Float, [1] just takes the Float
+        transform_parameterization_new = (value[1],value[1])  # value is transformed already
         transform_new = Untransformed()                 # fixed priors should stay untransformed
         U_new = Untransformed
 
         if isa(transform, Untransformed)
-            valuebounds_new = (value,value)
+            valuebounds_new = (value[1],value[1])
         end
     else
         transform_parameterization_new = transform_parameterization
     end
 
     # ensure that we have a Nullable{Distribution}, if not construct one
-    prior_new = !isa(prior_new,NullablePrior) ? NullablePrior(prior_new) : prior_new
+    prior_new = if isa(prior_new, NullableOrPriorUnivariate)
+        !isa(prior_new,NullablePriorUnivariate) ? NullablePriorUnivariate(prior_new) : prior_new
+    elseif isa(prior_new, NullableOrPriorMultivariate)
+        !isa(prior_new,NullablePriorMultivariate) ? NullablePriorMultivariate(prior_new) : prior_new
+    else
+        @error "Must be a PriorOrNullable or PriorOrNullableMultivariate"
+    end
 
     if scaling == identity
-        return UnscaledParameter{T,U_new}(key, value, valuebounds_new,
-                                          transform_parameterization_new, transform_new,
-                                          prior_new, fixed, description, tex_label)
+        if typeof(value) <: Number
+            return UnscaledParameter{T,U_new}(key, value, valuebounds_new,
+                                              transform_parameterization_new, transform_new,
+                                              prior_new, fixed, description, tex_label)
+        elseif typeof(value) <: Vector
+            return UnscaledVectorParameter{V,T,U_new}(key, value, valuebounds_new,
+                                              transform_parameterization_new, transform_new,
+                                              prior_new, fixed, description, tex_label)
+        else
+            @error "Type of value not yet supported"
+        end
     else
-        return ScaledParameter{T,U_new}(key, value, scaling(value), valuebounds_new,
-                                        transform_parameterization_new, transform_new,
-                                        prior_new, fixed, scaling, description, tex_label)
+        if typeof(value) <: Number
+            return ScaledParameter{T,U_new}(key, value, scaling(value), valuebounds_new,
+                                            transform_parameterization_new, transform_new,
+                                            prior_new, fixed, scaling, description, tex_label)
+        elseif typeof(value) <: Vector
+            return ScaledVectorParameter{V,T,U_new}(key, value, scaling(value), valuebounds_new,
+                                            transform_parameterization_new, transform_new,
+                                            prior_new, fixed, scaling, description, tex_label)
+        end
     end
 end
 
 function parameter(key::Symbol,
-                   prior::ContinuousUnivariateDistribution;
+                   prior::Union{ContinuousUnivariateDistribution, ContinuousMultivariateDistribution};
                    fixed::Bool = false,
                    description::String = "No description available",
                    tex_label::String = "")
-    return parameter(key, NaN, (NaN, NaN), (NaN, NaN), Untransformed(), prior, fixed, description, tex_label)
+    val = length(prior) > 1 ? repeat([NaN], length(MvNormal(ones(5), ones(5)))) : NaN
+    return parameter(key, val, (NaN, NaN), (NaN, NaN), Untransformed(), prior, fixed = fixed, scaling = identity, description = description, tex_label = tex_label)
 end
 
 
@@ -422,6 +479,26 @@ function Base.show(io::IO, p::Parameter{T,U}) where {T, U}
     @printf io "transformation for csminwel:\n\t%s" U()
     @printf io "parameter is %s\n" p.fixed ? "fixed" : "not fixed"
 end
+
+function Base.show(io::IO, p::VectorParameter{V,T,U}) where {V,T, U}
+    @printf io "%s\n" typeof(p)
+    @printf io "(:%s)\n%s\n"      p.key p.description
+    @printf io "LaTeX label: %s\n"     p.tex_label
+    @printf io "-----------------------------\n"
+    #@printf io "real value:        %+6f\n" transform_to_real_line(p)
+    join([@printf io "%+6f\n" x for x in p.value], ", ")
+    #isa(p,ScaledParameter) && @printf "scaled, untransformed value:        %+6f\n" p.scaledvalue
+    #!isa(U(),Untransformed) && @printf io "transformed value: %+6f\n" p.value
+
+    if hasprior(p)
+        @printf io "prior distribution:\n\t%s\n" get(p.prior)
+    else
+        @printf io "prior distribution:\n\t%s\n" "no prior"
+    end
+    @printf io "transformation for csminwel:\n\t%s" U()
+    @printf io "parameter is %s\n" p.fixed ? "fixed" : "not fixed"
+end
+
 
 function Base.show(io::IO, p::SteadyStateParameter{T}) where {T}
     @printf io "%s\n"                 typeof(p)
