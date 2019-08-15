@@ -1,6 +1,7 @@
 module ModelConstructors
 
-    using DataFrames, Dates, Distributed, Distributions, Nullables, Printf, Random, SpecialFunctions
+    using DataFrames, Dates, Distributed, Distributions, Nullables, Printf, Random
+    using SpecialFunctions
 
     import Base.isempty, Base.<, Base.min, Base.max
     export
@@ -20,10 +21,12 @@ module ModelConstructors
         # abstractmodel.jl
         AbstractModel, description,
         n_states, n_states_augmented, n_shocks_exogenous, n_shocks_expectational,
-    n_equilibrium_conditions, n_observables, n_parameters, n_parameters_steady_states, n_parameters_free, n_pseudo_observables, get_dict, get_key,
+        n_equilibrium_conditions, n_observables, n_parameters, n_parameters_steady_states,
+        n_parameters_free, n_pseudo_observables, get_dict, get_key,
         spec, subspec, saveroot, dataroot,
         data_vintage, data_id, cond_vintage,
-        logpath, workpath, rawpath, tablespath, figurespath, inpath, filestring_base, workpath, rawpath, tablespath, figurespath, logpath, savepath, inpath, filestring,
+        logpath, workpath, rawpath, tablespath, figurespath, inpath, filestring_base, workpath,
+        rawpath, tablespath, figurespath, logpath, savepath, inpath, filestring,
 
         # parameters.jl
         parameter, Transform, NullablePrior, AbstractParameter,
@@ -36,6 +39,9 @@ module ModelConstructors
         Uniform, Exponential, Normal, BetaAlt, GammaAlt, RootInverseGamma, pdf, logpdf, rand,
         DegenerateMvNormal, rank, length, DgenerateDiagMvTDist, mean, std,
         MatrixNormal, size, params,
+
+        # util.jl
+        info_print, warn_print, println, print, @test_matrix_approx_eq, @test_matrix_eq2,
 
         # Generic Model
         GenericModel,
