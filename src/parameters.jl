@@ -335,7 +335,7 @@ function parameter(key::Symbol,
                    valuebounds::Interval{T} = (value,value),
                    transform_parameterization::Interval{T} = (value,value),
                    transform::U             = Untransformed(),
-                   prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate}   = NullablePrior();
+                   prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate}   = NullablePriorUnivariate();
                    fixed::Bool              = true,
                    scaling::Function        = identity,
                    description::String = "No description available.",
