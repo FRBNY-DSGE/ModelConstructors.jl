@@ -42,7 +42,9 @@ module ModelConstructors
         DegenerateMvNormal, rank, length, DgenerateDiagMvTDist, mean, std,
         MatrixNormal, size, params,
 
-        # util.jl
+        AbstractVectorParameter, VectorParameter, VectorParameterVector, ScaledVectorParameter, UnscaledVectorParameter, Untransformed,
+
+       # util.jl
         info_print, warn_print, println, print, @test_matrix_approx_eq, @test_matrix_eq2,
 
         # Generic Model
