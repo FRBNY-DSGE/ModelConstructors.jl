@@ -1,3 +1,5 @@
+isdefined(Base, :__precompile__) && __precompile__(false)
+
 module ModelConstructors
 
     using DataFrames, Dates, Distributed, Distributions, Nullables, Printf, Random
