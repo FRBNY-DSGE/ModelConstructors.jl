@@ -1,5 +1,7 @@
 # ModelConstructors.jl
 
+[![Build Status](https://travis-ci.com/FRBNY-DSGE/ModelConstructors.jl.svg?branch=master)](https://travis-ci.com/FRBNY-DSGE/ModelConstructors.jl)
+
 Construct all your favorite model!
 
 Disclaimer
