@@ -1,6 +1,6 @@
 # ModelConstructors.jl
 
-Construct abstract models!
+Construct all your favorite model!
 
 Disclaimer
 ------
