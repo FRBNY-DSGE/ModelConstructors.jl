@@ -2,7 +2,10 @@
 
 [![Build Status](https://travis-ci.com/FRBNY-DSGE/ModelConstructors.jl.svg?branch=master)](https://travis-ci.com/FRBNY-DSGE/ModelConstructors.jl)
 
-Construct all your favorite model!
+This package contains the building blocks of model objects used for both DSGE.jl and SMC.jl, including Parameter, Observable, Setting, State, etc. types. You can define a model of any type as long as it has parameters.
+
+See /docs/examples for examples of how to construct your custom model, then use SMC.jl to estimate it (any type of model) and DSGE.jl to forecast, construct forecast decompositions, impulse responses, etc. (if it's a DSGE model).
+
 
 Disclaimer
 ------
