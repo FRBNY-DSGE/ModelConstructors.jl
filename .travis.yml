@@ -16,9 +16,9 @@ addons:
     packages:
     - hdf5-tools
     - libnlopt0
-script:
-    - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-    - julia --color=yes -e 'using Pkg; Pkg.add(pwd()); Pkg.build("SMC"); Pkg.test("SMC"; coverage=true)'
+#script:
+#    - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+#    - julia --color=yes -e 'using Pkg; Pkg.add(pwd()); Pkg.build("SMC"); Pkg.test("SMC"; coverage=true)'
 branches:
   only:
     - master
