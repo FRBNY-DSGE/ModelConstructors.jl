@@ -1,6 +1,7 @@
 using Test
 using ModelConstructors
 using Distributions
+using Printf
 
 my_tests = [
             "parameters"
