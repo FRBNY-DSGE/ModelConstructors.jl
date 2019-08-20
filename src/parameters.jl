@@ -402,7 +402,7 @@ function parameter(key::Symbol,
                    fixed::Bool = false,
                    description::String = "No description available",
                    tex_label::String = "")
-    val = length(prior) > 1 ? repeat([NaN], length(MvNormal(ones(5), ones(5)))) : NaN
+    val = length(prior) > 1 ? repeat([NaN], length(prior)) : NaN
     return parameter(key, val, (NaN, NaN), (NaN, NaN), Untransformed(), prior, fixed = fixed, scaling = identity, description = description, tex_label = tex_label)
 end
 
@@ -440,6 +440,16 @@ function parameter(p::UnscaledParameter{T,U}, newvalue::T) where {T <: Number, U
                            p.transform, p.prior, p.fixed, p.description, p.tex_label)
 end
 
+function parameter(p::UnscaledVectorParameter{V,T,U}, newvalue::V) where {V <: Vector, T <: Number, U <: Transform}
+    p.fixed && return p    # if the parameter is fixed, don't change its value
+    a,b = p.valuebounds
+    if !all(a .<= newvalue .<= b)
+        throw(ParamBoundsError("New value of $(string(p.key)) ($(newvalue)) is out of bounds ($(p.valuebounds))"))
+    end
+    UnscaledVectorParameter{V,T,U}(p.key, newvalue, p.valuebounds, p.transform_parameterization,
+                           p.transform, p.prior, p.fixed, p.description, p.tex_label)
+end
+
 
 """
 ```
@@ -459,6 +469,18 @@ function parameter(p::ScaledParameter{T,U}, newvalue::T) where {T <: Number, U <
                          p.transform_parameterization, p.transform, p.prior, p.fixed,
                          p.scaling, p.description, p.tex_label)
 end
+
+function parameter(p::ScaledVectorParameter{V,T,U}, newvalue::V) where {V <: Vector, T <: Number, U <: Transform}
+    p.fixed && return p    # if the parameter is fixed, don't change its value
+    a,b = p.valuebounds
+    if !all(a .<= newvalue .<= b)
+        throw(ParamBoundsError("New value of $(string(p.key)) ($(newvalue)) is out of bounds ($(p.valuebounds))"))
+    end
+    ScaledVectorParameter{V,T,U}(p.key, newvalue, p.scaling.(newvalue), p.valuebounds,
+                         p.transform_parameterization, p.transform, p.prior, p.fixed,
+                         p.scaling, p.description, p.tex_label)
+end
+
 
 function Base.show(io::IO, p::Parameter{T,U}) where {T, U}
     @printf io "%s\n" typeof(p)
@@ -580,10 +602,14 @@ transform_to_real_line(pvec::ParameterVector{T}) where T = map(transform_to_real
 # define operators to work on parameters
 
 Base.convert(::Type{T}, p::UnscaledParameter) where {T <: Number}     = convert(T,p.value)
+Base.convert(::Type{T}, p::UnscaledVectorParameter) where {T <: Vector}     = convert(T,p.value)
 Base.convert(::Type{T}, p::ScaledParameter) where {T <: Number}       = convert(T,p.scaledvalue)
+Base.convert(::Type{T}, p::ScaledVectorParameter) where {T <: Vector}       = convert(T,p.scaledvalue)
+
 Base.convert(::Type{T}, p::SteadyStateParameter) where {T <: Number}  = convert(T,p.value)
 
 Base.promote_rule(::Type{AbstractParameter{T}}, ::Type{U}) where {T<:Number, U<:Number} = promote_rule(T,U)
+Base.promote_rule(::Type{AbstractVectorParameter{T}}, ::Type{U}) where {T<:Vector, U<:Vector} = promote_rule(T,U)
 
 # Define scalar operators on parameters
 for op in (:(Base.:+),
@@ -605,6 +631,29 @@ for op in (:(Base.:+),
     @eval ($op)(p::ScaledParameter, q::UnscaledOrSteadyState) = ($op)(p.scaledvalue, q.value)
     @eval ($op)(p::UnscaledOrSteadyState, q::ScaledParameter) = ($op)(p.value, q.scaledvalue)
 end
+
+for op in (:(Base.:+),
+           :(Base.:-),
+           :(Base.:*),
+           :(Base.:/),
+           :(Base.:^))
+
+    @eval ($op)(p::UnscaledVectorParameter, q::UnscaledVectorParameter) = ($op)(p.value, q.value) #@eval ($op)(p::UnscaledOrSteadyState, q::UnscaledOrSteadyState) = ($op)(p.value, q.value)
+    @eval ($op)(p::UnscaledVectorParameter, x::Integer)            = ($op)(p.value, x) #@eval ($op)(p::UnscaledOrSteadyState, x::Integer)            = ($op)(p.value, x)
+    @eval ($op)(p::UnscaledVectorParameter, x::Number)            = ($op)(p.value, x) #@eval ($op)(p::UnscaledOrSteadyState, x::Number)            = ($op)(p.value, x)
+    #@eval ($op)(x::Number, p::UnscaledOrSteadyState)            = ($op)(x, p.value)
+
+    @eval ($op)(p::ScaledVectorParameter, q::ScaledVectorParameter) = ($op)(p.scaledvalue, q.scaledvalue)
+    @eval ($op)(p::ScaledVectorParameter, x::Integer)            = ($op)(p.scaledvalue, x)
+    @eval ($op)(p::ScaledVectorParameter, x::Number)            = ($op)(p.scaledvalue, x)
+    @eval ($op)(x::Number, p::ScaledVectorParameter)            = ($op)(x, p.scaledvalue)
+
+    @eval ($op)(p::ScaledVectorParameter, q::UnscaledOrSteadyState) = ($op)(p.scaledvalue, q.value)
+    #@eval ($op)(p::UnscaledOrSteadyState, q::ScaledVectorParameter) = ($op)(p.value, q.scaledvalue)
+end
+
+
+
 
 # Define scalar functional mappings and comparisons
 for f in (:(Base.exp),
