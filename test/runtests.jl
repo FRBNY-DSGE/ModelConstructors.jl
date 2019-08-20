@@ -4,7 +4,9 @@ using Distributions
 using Printf
 
 my_tests = [
-            "parameters"
+            "parameters",
+            "settings",
+            "paths",
             ]
 
 for test in my_tests
