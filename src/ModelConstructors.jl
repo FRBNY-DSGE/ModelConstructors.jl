@@ -42,9 +42,13 @@ module ModelConstructors
         DegenerateMvNormal, rank, length, DgenerateDiagMvTDist, mean, std,
         MatrixNormal, size, params,
 
-        AbstractVectorParameter, VectorParameter, VectorParameterVector, ScaledVectorParameter, UnscaledVectorParameter, Untransformed,
+        AbstractVectorParameter, VectorParameter, VectorParameterVector, ScaledVectorParameter,
+        UnscaledVectorParameter, Untransformed,
 
-       # util.jl
+        # statistics.jl
+        prior, posterior, posterior!,
+
+        # util.jl
         info_print, warn_print, println, print, @test_matrix_approx_eq, @test_matrix_eq2,
 
         # Generic Model
@@ -61,6 +65,7 @@ module ModelConstructors
     include("settings.jl")
     include("observables.jl")
     include("defaults.jl")
+    include("statistics.jl")
     include("util.jl")
     include("generic_model.jl")
     include("linear_regression.jl")
