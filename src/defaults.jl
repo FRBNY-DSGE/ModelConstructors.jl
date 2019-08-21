@@ -34,18 +34,12 @@ default_test_settings!(m::AbstractModel)
 
 The following Settings are constructed, initialized and added to
 `m.test_settings`. Their purposes are identical to those in
-`m.settings`, but these values are used to test DSGE.jl.
+`m.settings`, but these values are used to test package.
 
 ### I/O Locations and identifiers
 - `saveroot::Setting{String}`: A temporary directory in /tmp/
 - `dataroot::Setting{String}`: dsgeroot/test/reference/
 - `data_vintage::Setting{String}`: \"_REF\"
-
-### Metropolis-Hastings
-- `n_mh_simulations::Setting{Int}`: 100
-- `n_mh_blocks::Setting{Int}`: 1
-- `n_mh_burn::Setting{Int}`: 0
-- `mh_thin::Setting{Int}`: 1
 """
 function default_test_settings!(m::AbstractModel)
 
