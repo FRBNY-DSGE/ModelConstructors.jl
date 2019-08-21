@@ -1,7 +1,7 @@
 # ModelConstructors.jl
 
 [![Build Status](https://travis-ci.com/FRBNY-DSGE/ModelConstructors.jl.svg?branch=master)](https://travis-ci.com/FRBNY-DSGE/ModelConstructors.jl)
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://frbny-dsge.github.io/ModelConstructors.jl/latest
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://frbny-dsge.github.io/ModelConstructors.jl/latest)
 
 This package contains the building blocks of model objects used for both DSGE.jl and SMC.jl, including Parameter, Observable, Setting, State, etc. types. You can define a model of any type as long as it has parameters.
 
