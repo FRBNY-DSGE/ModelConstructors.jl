@@ -409,6 +409,17 @@ function rand(d::DegenerateMvNormal, m::AbstractModel; cc::AbstractFloat = 1.0)
 end
 
 """
+```
+rand(d::DegenerateMvNormal, rng::MersenneTwister; cc::AbstractFloat = 1.0)
+```
+
+Generate a draw from `d` with variance optionally scaled by `cc^2`.
+"""
+function rand(d::DegenerateMvNormal, rng::MersenneTwister; cc::AbstractFloat = 1.0)
+    return d.μ + cc*d.σ*randn(rng, length(d))
+end
+
+"""
 `rand_prior(m::AbstractModel; ndraws::Int = 100_000)`
 
 Draw a random sample from the model's prior distribution.
