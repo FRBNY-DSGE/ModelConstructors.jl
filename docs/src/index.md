@@ -4,7 +4,7 @@
 CurrentModule = ModelConstructors
 ```
 
-The *ModelConstructors.jl* package implements a generic model object for estimation.
+The *ModelConstructors.jl* package implements a generic mathematical model object.
 A model of any type can be defined as long as it has parameters.
 Moreover, this package contains the building blocks of model objects used for both
 Dynamic Stochastic General Equilibrium models
