@@ -17,9 +17,9 @@ have one or more of the following objects:
   [The `AbstractParameter` Type](@ref).
 - **Settings**: Provide a general way to choose settings that affect how a model
   is manipulated. See [The `Setting` Type](@ref).
-- **Observables**: Mapping of names to indices, as well as
+- **Observables and Pseudo-Observables**: Mapping of names to indices, as well as
   information necessary for transformations. See
-  [The `Observable` Type](@ref).
+  [The `Observable` and `PseudoObservable` Types](@ref).
 
 These are enough to define a generic model. *Everything else* is essentially
 a function of these basics. For example, estimating a model requires two more steps:

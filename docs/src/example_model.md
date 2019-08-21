@@ -58,7 +58,6 @@ as inputs to the likelihood function.
 Finally, we just call `smc(likelihood_fnct, capm.parameters, data)` to estimate
 the parameters of the CAPM model we have defined!
 
-
 ## `LinearRegression`
 The `LinearRegression` type is an example of a model type that does not need to use
 all the fields provided in `GenericModel` when estimating. For comparison,
