@@ -22,6 +22,7 @@ Pages = [
   "contributing.md",
   "license.md"
 ]
+```
 
 ## Acknowledgements
 
