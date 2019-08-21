@@ -36,22 +36,14 @@ time-invariant, unobserved value that has significance in the model, e.g.
 for likelihood computation and estimation.
 
 Though all parameters are time-invariant, they can have different features.
-Some parameters are scaled for use when solving the model[^eqcond] and
-constructing the model's measurement equations[^measure].
+Some parameters are scaled for use when solving the model[^1] and
+constructing the model's measurement equations[^2].
 During optimization, parameters can be transformed from
 model space to the real line via one of three different transformations. These
 transformations are also defined as types, and require additional information
 for each parameter. In some models, steady state values might be relevant parameters.
 They are typically functions of other parameters, so they do not need
 to be estimated directly.
-
-[^eqcond]: By solving the model, we mean a mapping from parameters to
-           some objects of interest. In a state space model,
-           solving the model is a mapping from parameters
-           to a state transition function. By constructing
-
-[^measure]: In the context of a state space model,
-            a measurement equation is mapping from states to observable data.
 
 These various requirements are nicely addressed using a parameterized type
 hierarchy.
@@ -110,18 +102,11 @@ plotting. Pseudo-observables are not observed, so they do not have
 
 As an example, the `:obs_gdp` `Observable` uses as `input_series` aggregate
 nominal GDP in levels, the GDP price index, and population in levels, all from
-FRED.[^loaddata] These series are `fwd_transform`ed to get quarter-over-quarter log growth
+FRED.[^3] These series are `fwd_transform`ed to get quarter-over-quarter log growth
 rates of per-capita real GDP, which are the `Observable`'s model units. The
 reverse transformation then converts `:obs_gdp` into annualized
 quarter-over-quarter percent changes of *aggregate* real GDP.
 
-[^loaddata]: In [DSGE.jl](https://github.com/FRBNY-DSGE/DSGE.jl), we implement a
-             `load_data` function that parses `input_series` to retrieve data
-             from FRED. To take full advantage of the `Observable` type, users may
-             want to write their own `load_data` function. For example, it may
-             be convenient to write a `load_data` function that parses `input_series`
-             to select column(s) from saved CSV files and combines them into
-             a single data frame.
 
 ```@docs
 Observable
@@ -198,3 +183,26 @@ Modules = [ModelConstructors]
 Pages = ["settings.jl"]
 Order = [:function]
 ```
+
+    rng::MersenneTwister
+    testing::Bool
+    observable_mappings::Dict{Symbol, Observable}
+    pseudo_observable_mappings::Dict{Symbol, PseudoObservable}
+
+
+
+[^1]: By solving the model, we mean a mapping from parameters to
+           some objects of interest. In a state space model,
+           solving the model is a mapping from parameters
+           to a state transition function. By constructing
+
+[^2]: In the context of a state space model,
+            a measurement equation is mapping from states to observable data.
+
+[^3]: In [DSGE.jl](https://github.com/FRBNY-DSGE/DSGE.jl), we implement a
+             `load_data` function that parses `input_series` to retrieve data
+             from FRED. To take full advantage of the `Observable` type, users may
+             want to write their own `load_data` function. For example, it may
+             be convenient to write a `load_data` function that parses `input_series`
+             to select column(s) from saved CSV files and combines them into
+             a single data frame.
