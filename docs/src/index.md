@@ -18,7 +18,9 @@ The Parameter, Observable, Setting, State, etc. types are included.
 Pages = [
   "model_design.md",
   "example_model.md",
-  "implementation_details.md"
+  "implementation_details.md",
+  "contributing.md",
+  "license.md"
 ]
 
 ## Acknowledgements
