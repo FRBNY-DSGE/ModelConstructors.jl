@@ -1,6 +1,6 @@
 # License
 
-Copyright (c) 2019, Federal Reserve Bank of New York
+Copyright (c) 2015, Federal Reserve Bank of New York
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are
