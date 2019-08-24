@@ -37,7 +37,7 @@ log Pr(Θ|data) = log Pr(data|Θ) + log Pr(Θ) + const
 function posterior(loglikelihood::Function, parameters::ParameterVector,
                    data::AbstractArray; ϕ_smc::Float64 = 1.)
     like = loglikelihood(parameters, data)
-    post = ϕ_smc * like + prior(m)
+    post = ϕ_smc * like + prior(parameters)
     return post
 end
 
