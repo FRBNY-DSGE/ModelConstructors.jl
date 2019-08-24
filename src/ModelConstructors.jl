@@ -69,5 +69,4 @@ module ModelConstructors
     include("util.jl")
     include("generic_model.jl")
     include("linear_regression.jl")
-
 end
