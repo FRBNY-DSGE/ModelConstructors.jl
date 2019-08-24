@@ -71,7 +71,7 @@ Evaluates the log posterior density at `parameters`.
 function posterior!(loglikelihood::Function, parameters::ParameterVector,
                     para_draw::Vector{T}, data::Matrix{T};
                     sampler::Bool = false, catch_errors::Bool = false,
-                    φ_smc::Float64 = 1.) where {T<:AbstractFloat}
+                    ϕ_smc::Float64 = 1.) where {T<:AbstractFloat}
     catch_errors = catch_errors | sampler
     if sampler
         try
