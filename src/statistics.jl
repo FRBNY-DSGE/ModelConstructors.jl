@@ -84,7 +84,7 @@ function posterior!(loglikelihood::Function, parameters::ParameterVector,
             end
         end
     else
-        DSGE.update!(parameters, para_draw)
+        update!(parameters, para_draw)
     end
-    return posterior(loglikelihood, data; ϕ_smc = ϕ_smc)
+    return posterior(loglikelihood, parameters, data; ϕ_smc = ϕ_smc)
 end
