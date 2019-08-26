@@ -396,7 +396,6 @@ function filestring(d::Vector{String})
     return "_" * join(d, "_")
 end
 
-
 """
 ```
 rand(d::DegenerateMvNormal, m::AbstractModel; cc::AbstractFloat = 1.0)
