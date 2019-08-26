@@ -37,6 +37,8 @@ module ModelConstructors
         update, update!, transform_to_model_space, transform_to_real_line, Interval,
         ParamBoundsError, Untransformed, SquareRoot,
 
+        prior,
+
         # distributions_ext.jl
         Uniform, Exponential, Normal, BetaAlt, GammaAlt, RootInverseGamma, pdf, logpdf, rand,
         DegenerateMvNormal, rank, length, DgenerateDiagMvTDist, mean, std,
