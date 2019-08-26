@@ -797,6 +797,27 @@ function Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int)
     return priorsim
 end
 
+"""
+```
+moments(θ::Parameter)
+```
+
+If θ's prior is a `RootInverseGamma`, τ and ν. Otherwise, returns the mean
+and standard deviation of the prior. If θ is fixed, returns `(θ.value, 0.0)`.
+"""
+function moments(θ::Parameter)
+    if θ.fixed
+        return θ.value, 0.0
+    else
+        prior = get(θ.prior)
+        if isa(prior, RootInverseGamma)
+            return prior.τ, prior.ν
+        else
+            return mean(prior), std(prior)
+        end
+    end
+end
+
 function describe_prior(param::Parameter)
     if param.fixed
         return "fixed at " * string(param.value)

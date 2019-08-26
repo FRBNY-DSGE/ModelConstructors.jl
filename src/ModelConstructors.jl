@@ -35,8 +35,7 @@ module ModelConstructors
         Parameter, ParameterVector, ScaledParameter,
         UnscaledParameter, SteadyStateParameter, transform_to_real_line, transform_to_model_space,
         update, update!, transform_to_model_space, transform_to_real_line, Interval,
-        ParamBoundsError, Untransformed, SquareRoot,
-
+        ParamBoundsError, Untransformed, SquareRoot, moments,
         prior,
 
         # distributions_ext.jl
