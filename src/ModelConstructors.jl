@@ -1,9 +1,10 @@
-isdefined(Base, :__precompile__) && __precompile__(false)
+isdefined(Base, :__precompile__) && __precompile__()
 
 module ModelConstructors
 
     using DataFrames, Dates, Distributed, Distributions, Nullables, Printf, Random
     using SpecialFunctions
+    using LinearAlgebra
 
     import Base.isempty, Base.<, Base.min, Base.max
     export
