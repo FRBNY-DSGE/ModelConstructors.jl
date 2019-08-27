@@ -15,13 +15,13 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [compat]
-julia = "0.7"
+julia = "0.7, 1.0"
 
 [extras]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DSGE = "6cf23378-2c47-544c-b0c3-6efefe57ca11"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 SMC = "c6043b28-c053-11e9-348c-19d3cb73bbb3"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["CSV", "DSGE", "SMC", "Test"]
