@@ -398,23 +398,23 @@ end
 
 """
 ```
-rand(d::DegenerateMvNormal, m::AbstractModel; cc::AbstractFloat = 1.0)
+rand(d::Union{DegenerateMvNormal,MvNormal}, m::AbstractModel; cc::AbstractFloat = 1.0)
 ```
 
 Generate a draw from `d` with variance optionally scaled by `cc^2`.
 """
-function rand(d::DegenerateMvNormal, m::AbstractModel; cc::AbstractFloat = 1.0)
+function rand(d::Union{DegenerateMvNormal,MvNormal}, m::AbstractModel; cc::AbstractFloat = 1.0)
     return d.μ + cc*d.σ*randn(m.rng, length(d))
 end
 
 """
 ```
-rand(d::DegenerateMvNormal, rng::MersenneTwister; cc::AbstractFloat = 1.0)
+rand(d::Union{DegenerateMvNormal,MvNormal}, rng::MersenneTwister; cc::AbstractFloat = 1.0)
 ```
 
 Generate a draw from `d` with variance optionally scaled by `cc^2`.
 """
-function rand(d::DegenerateMvNormal, rng::MersenneTwister; cc::AbstractFloat = 1.0)
+function rand(d::Union{DegenerateMvNormal,MvNormal}, rng::MersenneTwister; cc::AbstractFloat = 1.0)
     return d.μ + cc*d.σ*randn(rng, length(d))
 end
 
