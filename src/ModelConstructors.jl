@@ -8,6 +8,7 @@ module ModelConstructors
     import LinearAlgebra: rank
 
     import Base.isempty, Base.<, Base.min, Base.max
+    import LinearAlgebra.rank
     export
         # distributions_ext.jl
         BetaAlt, GammaAlt, RootInverseGamma, DegenerateMvNormal, DegenerateDiagMvTDist,
