@@ -108,8 +108,37 @@ distribution. The covariance matrix may not be full rank (hence degenerate).
 See [Multivariate normal distribution - Degenerate case](en.wikipedia.org/wiki/Multivariate_normal_distribution#Degenerate_case).
 """
 mutable struct DegenerateMvNormal <: Distribution{Multivariate, Continuous}
-    μ::Vector          # mean
-    σ::Matrix          # standard deviation
+    μ::Vector        # mean
+    σ::Matrix        # standard deviation
+    σ_inv::Matrix    # inverse of variance-covariance matrix
+    λ_vals::Vector   # eigenvalues of σ
+end
+
+"""
+```
+DegenerateMvNormal(μ::Vector, σ::Matrix)
+```
+Constructor for MvNormal type.
+"""
+function DegenerateMvNormal(μ::Vector, σ::Matrix)
+    return DegenerateMvNormal(μ, σ, Matrix{Float64}(undef,0,0), Vector{Float64}(undef,0))
+end
+
+"""
+```
+Distributions.logpdf(d::DegenerateMvNormal)
+```
+
+Method bypasses Distributions package implementation of logpdf so as to minimize numerical error.
+"""
+function Distributions.logpdf(d::DegenerateMvNormal, x::Vector{T}) where T<:AbstractFloat
+    # Occurs if one initialized a DegenerateMvNormal w/o storing inverted covariance matrix
+    if isempty(d.σ_inv)
+        d.σ_inv = inv(d.σ)
+        λ_all, _ = eigen(d.σ)
+        d.λ_vals = filter(x -> x>1e-6, λ_all)
+    end
+    return -(length(d.μ) * log2π + log(prod(d.λ_vals))) / 2.0 - ((x .- d.μ)'*d.σ_inv*(x .- d.μ))
 end
 
 """
