@@ -12,7 +12,7 @@ module ModelConstructors
     export
         # distributions_ext.jl
         BetaAlt, GammaAlt, RootInverseGamma, DegenerateMvNormal, DegenerateDiagMvTDist,
-        MatrixNormal, <=,
+        MatrixNormal, <=, logpdf,
 
         # settings.jl
         Setting, get_setting,
