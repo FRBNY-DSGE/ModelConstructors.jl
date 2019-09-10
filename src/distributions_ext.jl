@@ -138,7 +138,7 @@ function Distributions.logpdf(d::DegenerateMvNormal, x::Vector{T}) where T<:Abst
         λ_all, _ = eigen(d.σ)
         d.λ_vals = filter(x -> x>1e-6, λ_all)
     end
-    return -(length(d.μ) * log2π + log(prod(d.λ_vals))) / 2.0 - ((x .- d.μ)'*d.σ_inv*(x .- d.μ))
+    return -(length(d.μ) * log2π + log(prod(d.λ_vals)) + ((x .- d.μ)'*d.σ_inv*(x .- d.μ))) / 2.0
 end
 
 """
