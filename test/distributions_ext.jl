@@ -1,5 +1,5 @@
 using ModelConstructors
-using Test, Distributions, InteractiveUtils, Nullables, Random
+using Test, Distributions, InteractiveUtils, LinearAlgebra, Random
 
 Random.seed!(22)
 
