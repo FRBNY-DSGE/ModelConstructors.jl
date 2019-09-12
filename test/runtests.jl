@@ -5,6 +5,7 @@ using Printf
 
 my_tests = [
             "parameters",
+            "distributions_ext",
             "settings",
             "paths",
             ]
