@@ -54,10 +54,17 @@ end
 @testset "Ensure parameters being updated are of the same type." begin
     for w in [parameter(:moop, 3.0, fixed=false), parameter(:moop, 3.0; scaling = log, fixed=false)]
         # new values must be of the same type
-        @test_throws MethodError parameter(w, one(Int))
+        @test_throws ErrorException parameter(w, one(Int))
 
         # new value is out of bounds
         @test_throws ParamBoundsError parameter(w, -1.)
+    end
+end
+
+@testset "Ensure parameter value types can be changed when forced by keyword." begin
+    for w in [parameter(:moop, 1.0, fixed=false), parameter(:moop, 1.0; scaling = log, fixed=false)]
+        # new values must be of the same type
+        @test typeof(parameter(w, one(Int); change_value_type = true).value == Int)
     end
 end
 
