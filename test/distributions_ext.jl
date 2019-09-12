@@ -1,5 +1,7 @@
 using ModelConstructors
-using Test, Distributions, InteractiveUtils, Nullables
+using Test, Distributions, InteractiveUtils, Nullables, Random
+
+Random.seed!(22)
 
 i, j, k = 3, 60, 200
 
