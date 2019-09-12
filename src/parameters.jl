@@ -57,6 +57,10 @@ abstract type Parameter{T,U<:Transform} <: AbstractParameter{T} end
 abstract type VectorParameter{V,T,U<:Transform} <: AbstractVectorParameter{V,T} end
 #abstract type ArrayParameter{A,U<:Transform} <: AbstractArrayParameter{A} end
 
+# ParameterVector is a wrapper for a vector
+# that takes any subtype of AbstractParameter, but it is not
+# an "abstract" type since we are not intending
+# to define subtypes of ParameterVector.
 ParameterVector{T}       =  Vector{AbstractParameter{T}}
 VectorParameterVector{V,T} =  Vector{AbstractVectorParameter{V,T}}
 #ArrayParameterVector{A}  =  Vector{AbstractArrayParameter{A}}
