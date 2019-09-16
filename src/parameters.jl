@@ -727,6 +727,10 @@ for op in (:(Base.:+),
     @eval ($op)(x::Matrix, p::UnscaledOrSteadyState)        = ($op)(x, p.value)
 end
 
+# Overload length, iterate to broadcast works properly
+Base.length(p::Parameter) = length(p.value)
+Base.iterate(p::Parameter, state=1) = state > length(p.value) ? nothing : (state, state+1)
+
 """
 ```
 update!(pvec::ParameterVector, values::Vector{S}; change_value_type::Bool = false) where S

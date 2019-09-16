@@ -5,6 +5,7 @@ module ModelConstructors
     using DataFrames, Dates, Distributed, Distributions, Nullables, Printf, Random
     using SpecialFunctions
     using LinearAlgebra
+    using OrderedCollections
 
     import Base.isempty, Base.<, Base.min, Base.max
     import LinearAlgebra.rank
