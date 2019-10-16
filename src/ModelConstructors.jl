@@ -2,7 +2,8 @@ isdefined(Base, :__precompile__) && __precompile__()
 
 module ModelConstructors
 
-    using DataFrames, Dates, Distributed, Distributions, Nullables, Printf, Random
+    using DataFrames, Dates, Distributed, Distributions
+    using ForwardDiff, Nullables, Printf, Random
     using SpecialFunctions
     using LinearAlgebra
     using OrderedCollections

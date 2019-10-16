@@ -444,7 +444,7 @@ function parameter(p::UnscaledParameter{S,T,U}, newvalue::Snew;
                    change_value_type::Bool = false) where {S<:Real, Snew<:Real, T <: Number, U <: Transform}
     p.fixed && return p    # if the parameter is fixed, don't change its value
     if !change_value_type && (typeof(p.value) != typeof(newvalue))
-        error("Type of newvalue $(newvalue) does not match value of parameter $(string(p.key)).")
+        error("Type of newvalue $(newvalue) does not match the type of the current value for parameter $(string(p.key)). Set keyword change_value_type = true if you want to overwrite the type of the parameter value.")
     end
     a,b = p.valuebounds
     if !(a <= newvalue <= b)
@@ -636,6 +636,8 @@ Base.convert(::Type{S}, p::ScaledParameter) where {S<:Real}       = convert(S,p.
 Base.convert(::Type{T}, p::ScaledVectorParameter) where {T <: Vector}       = convert(T,p.scaledvalue)
 
 Base.convert(::Type{S}, p::SteadyStateParameter) where {S<:Real}  = convert(S,p.value)
+Base.convert(::Type{ForwardDiff.Dual{T,V,N}}, p::UnscaledParameter) where {T,V,N} = convert(V,p.value)
+Base.convert(::Type{ForwardDiff.Dual{T,V,N}}, p::ScaledParameter) where {T,V,N} = convert(V,p.scaledvalue)
 
 Base.promote_rule(::Type{AbstractParameter{S}}, ::Type{U}) where {S<:Real, U<:Number} = promote_rule(S,U)
 Base.promote_rule(::Type{AbstractVectorParameter{T}}, ::Type{U}) where {T<:Vector, U<:Vector} = promote_rule(T,U)
