@@ -64,7 +64,7 @@ end
 @testset "Ensure parameter value types can be changed when forced by keyword." begin
     for w in [parameter(:moop, 1.0, fixed=false), parameter(:moop, 1.0; scaling = log, fixed=false)]
         # new values must be of the same type
-        @test typeof(parameter(w, one(Int); change_value_type = true).value == Int)
+        @test typeof(parameter(w, one(Int); change_value_type = true).value) == Int
     end
 end
 
@@ -222,11 +222,31 @@ end
     end
 end
 
-
-# New Tests
+# Check parameters can be declared as vectors
 @testset "Test vector-valued parameters" begin
     p = parameter(:test, ones(5), (0.0, 5.), (0., 5.0), Untransformed(), MvNormal(ones(5), ones(5)), fixed = false, scaling = x -> x/2)
     @test all(ones(5) ./ 2 .== parameter(p, ones(5)).scaledvalue)
+end
+
+# Check we can update only specific parameter values in a ParameterVector
+@testset "Test updating specific values of a ParameterVector" begin
+    # Check you can overwrite values which are unfixed
+    pvec = ParameterVector{Float64}(undef, 3)
+    pvec[1] = parameter(:a, 1., (0., 3.), (0., 3.), fixed = false)
+    pvec[2] = parameter(:b, 1.)
+    pvec[3] = parameter(:c, 1., (0., 3.), (0., 3.), fixed = false)
+    vals = [2., 2.]
+    update!(pvec, vals, BitArray([true, false, true]))
+    @test map(x -> x.value, pvec) == [2., 1., 2.]
+
+    # Check that overwriting fixed parameter values does not work, even if you pass
+    # the BitArray telling update! to change the values.
+    pvec[1] = parameter(:a, 1.)
+    pvec[2] = parameter(:b, 1.)
+    pvec[3] = parameter(:c, 1.)
+    vals = [2., 2.]
+    update!(pvec, vals, BitArray([true, false, true]))
+    @test map(x -> x.value, pvec) == [1., 1., 1.]
 end
 
 nothing

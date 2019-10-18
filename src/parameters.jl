@@ -746,12 +746,81 @@ function update!(pvec::ParameterVector, values::Vector{S};
                  change_value_type::Bool = false) where S
     # this function is optimised for speed
     @assert length(values) == length(pvec) "Length of input vector (=$(length(values))) must match length of parameter vector (=$(length(pvec)))"
+
     if change_value_type
         tmp = (x,y) -> parameter(x, y; change_value_type = change_value_type)
         map!(tmp, pvec, pvec, values)
     else
         map!(parameter, pvec, pvec, values)
     end
+end
+
+"""
+```
+update!(pvec::ParameterVector, values::Vector{S},
+    indices::BitArray{1}; change_value_type::Bool = false) where S
+```
+
+Updates a subset of parameters in `pvec` specified by indices. Assumes `values`
+is sorted in the same order as the parameters in `pvec`, ignoring parameters
+that are to be left unchanged.
+
+However, `update!` will not overwrite fixed parameters, even if
+`indices` has a true in an index corresponding to a fixed parameter.
+
+
+# Examples
+```jldoctest
+julia> pvec = ParameterVector{Float64}(undef, 3);
+julia> pvec[1] = parameter(:a, 1., (0., 3.), (0., 3.), fixed = false);
+julia> pvec[2] = parameter(:b, 1.);
+julia> pvec[3] = parameter(:c, 1., (0., 3.), (0., 3.), fixed = false);
+julia> values = [2., 2.];
+julia> update!(pvec, values, [true, false, true]);
+julia> map(x -> x.value, pvec)
+3-element Array{Float64,1}:
+ 2.0
+ 1.0
+ 2.0
+
+```
+
+```jldoctest
+julia> pvec = ParameterVector{Float64}(undef, 3);
+julia> pvec[1] = parameter(:a, 1.);
+julia> pvec[2] = parameter(:b, 1.);
+julia> pvec[3] = parameter(:c, 1.);
+julia> values = [2., 2.];
+julia> update!(pvec, values, [true, false, true]);
+julia> map(x -> x.value, pvec)
+3-element Array{Float64,1}:
+ 1.0
+ 1.0
+ 1.0
+
+```
+"""
+function update!(pvec::ParameterVector, values::Vector{S}, indices::BitArray{1};
+                 change_value_type::Bool = false) where S
+
+    # Are you changing all indices? Or a subset?
+    if all(indices)
+        current_vals = values
+    else
+        @assert count(indices) == length(values) "Length of input vector (=$(length(values))) must match number of values in parameter vector that `indices` specified to be changed (=$(count(indices)))"
+        # Infer whether we need to declare current_vals as a Vector{<:Real}
+        # (e.g. if values are ForwardDiff.Dual types)
+        # or if current_vals can be a smaller memory type (e.g. Float64)
+        try
+            eltype(values)::AbstractFloat
+            current_vals = Vector{eltype(values)}(map(x -> x.value, pvec))
+        catch
+            current_vals = Vector{Real}(map(x -> x.value, pvec))
+        end
+        current_vals[indices] .= values
+    end
+
+    update!(pvec, current_vals; change_value_type = change_value_type)
 end
 
 """
