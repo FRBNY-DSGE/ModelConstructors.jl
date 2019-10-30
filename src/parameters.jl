@@ -50,7 +50,7 @@ Parameter{ S<:Real, T<:Number, U<:Transform} <: AbstractParameter{T}
 The Parameter type is the common supertype of time-invariant, non-steady-state model
 parameters. It has 2 subtypes, `UnscaledParameter` and `ScaledParameter`.
 `ScaledParameter`s are parameters whose values are scaled when used in the model's
-equilibrium conditions. The scaled value is stored for convenience, and udpated when the
+equilibrium conditions. The scaled value is stored for convenience, and updated when the
 parameter's value is updated.
 
 The Parameter type has separate `T` and `S` types to allow for
