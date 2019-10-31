@@ -13,6 +13,36 @@ using Test, Distributions, InteractiveUtils, Nullables
     end
 end
 
+tomodel_answers = zeros(3)
+toreal_answers  = zeros(3)
+a = 1e-8; b = 5.; c = 1.
+x = 2.5230
+cx = 2 * (x - (a+b)/2)/(b-a)
+toreal_answers[1] = 1. / (c * (x - a))
+toreal_answers[2] = (1/c) * (1. / (1. - cx^2)^(-3/2)) * (2/(b-a))
+toreal_answers[3] = 1.
+x = transform_to_real_line(parameter(:σ_pist, 2.5230, (1e-8, 5.), (1e-8, 5.),
+                                     ModelConstructors.Exponential(), fixed=false))
+tomodel_answers[1] = c * exp(c * (x - b))
+x = transform_to_real_line(parameter(:σ_pist, 2.5230, (1e-8, 5.), (1e-8, 5.),
+                                     ModelConstructors.SquareRoot(), fixed=false))
+tomodel_answers[2] = (b - a) / 2 * c / (1 + c^2 * x^2)^(3/2)
+tomodel_answers[3] = 1.
+@testset "Ensure derivatives of transformations to the real line/model space are valid" begin
+    for (i,T) in enumerate(subtypes(Transform))
+        global u = parameter(:σ_pist, 2.5230, (1e-8, 5.), (1e-8, 5.), T(), fixed=false)
+        @test differentiate_transform_to_real_line(u, u.value) == toreal_answers[i]
+        x = transform_to_real_line(u)
+        @test differentiate_transform_to_model_space(u,x) == tomodel_answers[i]
+
+        if !isa(T,Type{ModelConstructors.Untransformed})
+            # check transform_to_real_line and transform_to_model_space to different things if T is not ModelConstructors.Untransformed
+            @test differentiate_transform_to_real_line(u,u.value) != differentiate_transform_to_model_space(u,u.value)
+        end
+    end
+
+end
+
 # probability
 N = 10^2
 u = parameter(:bloop, 2.5230, (1e-8, 5.), (1e-8, 5.), ModelConstructors.SquareRoot(); fixed = true)

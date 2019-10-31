@@ -39,6 +39,7 @@ module ModelConstructors
         parameter, Transform, NullablePrior, AbstractParameter,
         Parameter, ParameterVector, ScaledParameter,
         UnscaledParameter, SteadyStateParameter, transform_to_real_line, transform_to_model_space,
+        differentiate_transform_to_real_line, differentiate_transform_to_model_space,
         update, update!, transform_to_model_space, transform_to_real_line, Interval,
         ParamBoundsError, Untransformed, SquareRoot, moments,
         prior,
