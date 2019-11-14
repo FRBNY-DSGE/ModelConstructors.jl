@@ -38,7 +38,7 @@ function GenericModel(spec::String = "", subspec::String = ""; custom_settings::
 end
 
 
-description(m::GenericModel) = "A generic model: You can put parameters, states, shocks, observables, pseudo-observables, spec, subpsec, settings inside of me"
+description(m::GenericModel) = "A generic model: You can put parameters, states, shocks, observables, pseudo-observables, spec, subpsec, settings inside of me."
 
 
 function model_settings!(m::GenericModel)

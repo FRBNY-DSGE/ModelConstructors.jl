@@ -9,7 +9,7 @@ mutable struct LinearRegression{T} <: AbstractModel{T}
     testing::Bool
 end
 
-description(m::LinearRegression) = "You know what I am..."
+description(m::LinearRegression) = "LinearRegression model."
 
 function LinearRegression(spec::String="", subspec::String="ss0";
                           custom_settings::Dict{Symbol, Setting} = Dict{Symbol, Setting}(),
