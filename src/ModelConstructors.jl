@@ -4,17 +4,18 @@ module ModelConstructors
 
     using DataFrames, Dates, Distributed, Distributions
     using ForwardDiff, Nullables, Printf, Random
-    using SpecialFunctions
-    using LinearAlgebra
-    using OrderedCollections
+    using LinearAlgebra, OrderedCollections, SpecialFunctions
 
-    import Base.isempty, Base.<, Base.min, Base.max
+    import Base.isempty, Base.<, Base.min, Base.max, Base.length
+    import Distributions.log2π, Distributions.params, Distributions.mean, Distributions.std
+    import Distributions.pdf, Distributions.logpdf, Distributions.Distribution
+    import Distributions.rand, Distributions.Matrixvariate, Distributions.LinearAlgebra
     import LinearAlgebra.rank
-    import Distributions.log2π
+    import SpecialFunctions.gamma
     export
         # distributions_ext.jl
         BetaAlt, GammaAlt, RootInverseGamma, DegenerateMvNormal, DegenerateDiagMvTDist,
-        MatrixNormal, <=, logpdf,
+        MatrixNormal, <=, logpdf, init_deg_mvnormal,
 
         # settings.jl
         Setting, get_setting,
