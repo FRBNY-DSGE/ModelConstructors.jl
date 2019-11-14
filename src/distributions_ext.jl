@@ -5,13 +5,9 @@ necessary because we specify prior distributions wrt mean and SD
 parameters). Note these functions are NOT new methods for the Distributions.Beta, etc.
 functions, but rather new functions with the same names.
 =#
-
-import Distributions: params, mean, std, pdf, logpdf, rand, Distribution, Matrixvariate, LinearAlgebra
-import Base: length
-import SpecialFunctions: gamma
 """
 ```
-BetaAlt(μ::AbstractFloat, σ::AbstractFloat)
+BetaAlt(μ::T, σ::T) where {T<:Real}
 ```
 
 Given μ and σ, calculate α and β and return a Distributions.Beta Distribution object.
@@ -20,7 +16,7 @@ Given μ and σ, calculate α and β and return a Distributions.Beta Distributio
 `μ`: The mean of the desired distribution
 `σ`: The standard deviation of the desired distribution
 """
-function BetaAlt(μ::AbstractFloat, σ::AbstractFloat)
+function BetaAlt(μ::T, σ::T) where {T<:Real}
     α = (1-μ) * μ^2 / σ^2 - μ
     β = α * (1/μ - 1)
     return Distributions.Beta(α, β)
@@ -29,7 +25,7 @@ end
 
 """
 ```
-GammaAlt(μ::AbstractFloat, σ::AbstractFloat)
+GammaAlt(μ::T, σ::T) where {T<:Real}
 ```
 
 Given μ and σ, calculate α and β and return a Distributions.Gamma object.
@@ -38,7 +34,7 @@ Given μ and σ, calculate α and β and return a Distributions.Gamma object.
 `μ`: The mean of the desired distribution
 `σ`: The standard deviation of the desired distribution
 """
-function GammaAlt(μ::AbstractFloat, σ::AbstractFloat)
+function GammaAlt(μ::T, σ::T) where {T<:Real}
     β = σ^2 / μ
     α = μ / β
     return Distributions.Gamma(α, β)
@@ -64,24 +60,24 @@ Distributions.params(d::RootInverseGamma) = (d.ν, d.τ)
 
 """
 ```
-Distributions.pdf(d::RootInverseGamma, x::AbstractFloat)
+Distributions.pdf(d::RootInverseGamma, x::T) where {T<:Real}
 ```
 
 Compute the pdf of a RootInverseGamma distribution at x.
 """
-function Distributions.pdf(d::RootInverseGamma, x::AbstractFloat)
+function Distributions.pdf(d::RootInverseGamma, x::T) where {T<:Real}
     (ν, τ) = params(d)
     return 2 * (ν*τ^2/2)^(ν/2) * exp((-ν*τ^2)/(2x^2)) / gamma(ν/2) / x^(ν+1)
 end
 
 """
 ```
-Distributions.logpdf(d::RootInverseGamma, x::AbstractFloat)
+Distributions.logpdf(d::RootInverseGamma, x::T) where {T<:Real}
 ```
 
 Compute the log pdf of a RootInverseGamma distribution at x.
 """
-function Distributions.logpdf(d::RootInverseGamma, x::AbstractFloat)
+function Distributions.logpdf(d::RootInverseGamma, x::T) where {T<:Real}
     (ν, τ) = params(d)
     return log(2) - log(gamma(ν/2)) + (ν/2)*log(ν*τ^2/2) - ((ν+1)/2)*log(x^2) - ν*τ^2/(2x^2)
 end
@@ -118,10 +114,23 @@ end
 ```
 DegenerateMvNormal(μ::Vector, σ::Matrix)
 ```
-Constructor for MvNormal type.
+Constructor for DegenerateMvNormal type.
 """
 function DegenerateMvNormal(μ::Vector, σ::Matrix)
-    return DegenerateMvNormal(μ, σ, Matrix{Float64}(undef,0,0), Vector{Float64}(undef,0))
+    return DegenerateMvNormal(μ, σ, Matrix{eltype(μ)}(undef,0,0), Vector{eltype(μ)}(undef,0))
+end
+
+"""
+```
+function init_deg_mvnormal(μ::Vector, σ::Matrix)
+```
+Initializes fields for DegenerateMvNormal type.
+"""
+function init_deg_mvnormal(μ::Vector, σ::Matrix)
+    U, λ_vals, Vt = svd(σ)
+    λ_inv = [λ > 1e-6 ? 1/λ : 0.0 for λ in λ_vals]
+    σ_inv = Vt' * Diagonal(λ_inv) * U'
+    return DegenerateMvNormal(μ, σ, σ_inv, λ_vals)
 end
 
 """
@@ -131,7 +140,7 @@ Distributions.logpdf(d::DegenerateMvNormal)
 
 Method bypasses Distributions package implementation of logpdf so as to minimize numerical error.
 """
-function Distributions.logpdf(d::DegenerateMvNormal, x::Vector{T}) where T<:AbstractFloat
+function Distributions.logpdf(d::DegenerateMvNormal, x::Vector{T}) where T<:Real
     # Occurs if one initialized a DegenerateMvNormal w/o storing inverted covariance matrix
     if isempty(d.σ_inv)
         d.σ_inv = inv(d.σ)

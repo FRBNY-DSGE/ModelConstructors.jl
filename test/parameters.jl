@@ -13,6 +13,36 @@ using Test, Distributions, InteractiveUtils, Nullables
     end
 end
 
+tomodel_answers = zeros(3)
+toreal_answers  = zeros(3)
+a = 1e-8; b = 5.; c = 1.
+x = 2.5230
+cx = 2 * (x - (a+b)/2)/(b-a)
+toreal_answers[1] = 1. / (c * (x - a))
+toreal_answers[2] = (1/c) * (1. / (1. - cx^2)^(-3/2)) * (2/(b-a))
+toreal_answers[3] = 1.
+x = transform_to_real_line(parameter(:σ_pist, 2.5230, (1e-8, 5.), (1e-8, 5.),
+                                     ModelConstructors.Exponential(), fixed=false))
+tomodel_answers[1] = c * exp(c * (x - b))
+x = transform_to_real_line(parameter(:σ_pist, 2.5230, (1e-8, 5.), (1e-8, 5.),
+                                     ModelConstructors.SquareRoot(), fixed=false))
+tomodel_answers[2] = (b - a) / 2 * c / (1 + c^2 * x^2)^(3/2)
+tomodel_answers[3] = 1.
+@testset "Ensure derivatives of transformations to the real line/model space are valid" begin
+    for (i,T) in enumerate(subtypes(Transform))
+        global u = parameter(:σ_pist, 2.5230, (1e-8, 5.), (1e-8, 5.), T(), fixed=false)
+        @test differentiate_transform_to_real_line(u, u.value) == toreal_answers[i]
+        x = transform_to_real_line(u)
+        @test differentiate_transform_to_model_space(u,x) == tomodel_answers[i]
+
+        if !isa(T,Type{ModelConstructors.Untransformed})
+            # check transform_to_real_line and transform_to_model_space to different things if T is not ModelConstructors.Untransformed
+            @test differentiate_transform_to_real_line(u,u.value) != differentiate_transform_to_model_space(u,u.value)
+        end
+    end
+
+end
+
 # probability
 N = 10^2
 u = parameter(:bloop, 2.5230, (1e-8, 5.), (1e-8, 5.), ModelConstructors.SquareRoot(); fixed = true)
@@ -54,10 +84,17 @@ end
 @testset "Ensure parameters being updated are of the same type." begin
     for w in [parameter(:moop, 3.0, fixed=false), parameter(:moop, 3.0; scaling = log, fixed=false)]
         # new values must be of the same type
-        @test_throws MethodError parameter(w, one(Int))
+        @test_throws ErrorException parameter(w, one(Int))
 
         # new value is out of bounds
         @test_throws ParamBoundsError parameter(w, -1.)
+    end
+end
+
+@testset "Ensure parameter value types can be changed when forced by keyword." begin
+    for w in [parameter(:moop, 1.0, fixed=false), parameter(:moop, 1.0; scaling = log, fixed=false)]
+        # new values must be of the same type
+        @test typeof(parameter(w, one(Int); change_value_type = true).value) == Int
     end
 end
 
@@ -215,11 +252,31 @@ end
     end
 end
 
-
-# New Tests
+# Check parameters can be declared as vectors
 @testset "Test vector-valued parameters" begin
     p = parameter(:test, ones(5), (0.0, 5.), (0., 5.0), Untransformed(), MvNormal(ones(5), ones(5)), fixed = false, scaling = x -> x/2)
     @test all(ones(5) ./ 2 .== parameter(p, ones(5)).scaledvalue)
+end
+
+# Check we can update only specific parameter values in a ParameterVector
+@testset "Test updating specific values of a ParameterVector" begin
+    # Check you can overwrite values which are unfixed
+    pvec = ParameterVector{Float64}(undef, 3)
+    pvec[1] = parameter(:a, 1., (0., 3.), (0., 3.), fixed = false)
+    pvec[2] = parameter(:b, 1.)
+    pvec[3] = parameter(:c, 1., (0., 3.), (0., 3.), fixed = false)
+    vals = [2., 2.]
+    update!(pvec, vals, BitArray([true, false, true]))
+    @test map(x -> x.value, pvec) == [2., 1., 2.]
+
+    # Check that overwriting fixed parameter values does not work, even if you pass
+    # the BitArray telling update! to change the values.
+    pvec[1] = parameter(:a, 1.)
+    pvec[2] = parameter(:b, 1.)
+    pvec[3] = parameter(:c, 1.)
+    vals = [2., 2.]
+    update!(pvec, vals, BitArray([true, false, true]))
+    @test map(x -> x.value, pvec) == [1., 1., 1.]
 end
 
 nothing

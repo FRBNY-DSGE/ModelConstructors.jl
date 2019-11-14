@@ -2,17 +2,20 @@ isdefined(Base, :__precompile__) && __precompile__(false)
 
 module ModelConstructors
 
-    using DataFrames, Dates, Distributed, Distributions, Nullables, Printf, Random
-    using SpecialFunctions
-    using LinearAlgebra
+    using DataFrames, Dates, Distributed, Distributions
+    using ForwardDiff, Nullables, Printf, Random
+    using LinearAlgebra, OrderedCollections, SpecialFunctions
 
-    import Base.isempty, Base.<, Base.min, Base.max
+    import Base.isempty, Base.<, Base.min, Base.max, Base.length
+    import Distributions.log2π, Distributions.params, Distributions.mean, Distributions.std
+    import Distributions.pdf, Distributions.logpdf, Distributions.Distribution
+    import Distributions.rand, Distributions.Matrixvariate, Distributions.LinearAlgebra
     import LinearAlgebra.rank
-    import Distributions.log2π
+    import SpecialFunctions.gamma
     export
         # distributions_ext.jl
         BetaAlt, GammaAlt, RootInverseGamma, DegenerateMvNormal, DegenerateDiagMvTDist,
-        MatrixNormal, <=, logpdf,
+        MatrixNormal, <=, logpdf, init_deg_mvnormal,
 
         # settings.jl
         Setting, get_setting,
@@ -37,6 +40,7 @@ module ModelConstructors
         parameter, Transform, NullablePrior, AbstractParameter,
         Parameter, ParameterVector, ScaledParameter,
         UnscaledParameter, SteadyStateParameter, transform_to_real_line, transform_to_model_space,
+        differentiate_transform_to_real_line, differentiate_transform_to_model_space,
         update, update!, transform_to_model_space, transform_to_real_line, Interval,
         ParamBoundsError, Untransformed, SquareRoot, moments,
         prior,
