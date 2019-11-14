@@ -5,10 +5,6 @@ necessary because we specify prior distributions wrt mean and SD
 parameters). Note these functions are NOT new methods for the Distributions.Beta, etc.
 functions, but rather new functions with the same names.
 =#
-
-import Distributions: params, mean, std, pdf, logpdf, rand, Distribution, Matrixvariate, LinearAlgebra
-import Base: length
-import SpecialFunctions: gamma
 """
 ```
 BetaAlt(μ::T, σ::T) where {T<:Real}
@@ -118,10 +114,23 @@ end
 ```
 DegenerateMvNormal(μ::Vector, σ::Matrix)
 ```
-Constructor for MvNormal type.
+Constructor for DegenerateMvNormal type.
 """
 function DegenerateMvNormal(μ::Vector, σ::Matrix)
     return DegenerateMvNormal(μ, σ, Matrix{eltype(μ)}(undef,0,0), Vector{eltype(μ)}(undef,0))
+end
+
+"""
+```
+function init_deg_mvnormal(μ::Vector, σ::Matrix)
+```
+Initializes fields for DegenerateMvNormal type.
+"""
+function init_deg_mvnormal(μ::Vector, σ::Matrix)
+    U, λ_vals, Vt = svd(σ)
+    λ_inv = [λ > 1e-6 ? 1/λ : 0.0 for λ in λ_vals]
+    σ_inv = Vt' * Diagonal(λ_inv) * U'
+    return DegenerateMvNormal(μ, σ, σ_inv, λ_vals)
 end
 
 """
