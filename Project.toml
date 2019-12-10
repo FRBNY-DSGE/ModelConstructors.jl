@@ -16,7 +16,6 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
-
 [compat]
 julia = "0.7, 1.0, 1.1"
 DataFrames = "^0.19.0"
@@ -25,8 +24,6 @@ ForwardDiff = "^0.10.6"
 Nullables = "^0.0.8"
 OrderedCollections = "^1.1.0"
 SpecialFunctions = "0.7.0, 0.8"
-
-
 
 [extras]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
