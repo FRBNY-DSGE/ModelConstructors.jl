@@ -27,7 +27,7 @@ the source code of `GenericModel` into a new file and editing that file. Referen
 the source code of models in [DSGE.jl](https://github.com/FRBNY-DSGE/DSGE.jl)
 will be useful.
 
-### [Estimating CAPM](@ref estim-capm)
+### [Estimating CAPM](@id estim-capm)
 
 Some users only need the ability to estimate parameters. `GenericModel` provides
 a convenient way to do that since it includes functionality to choose settings
