@@ -27,8 +27,8 @@ vint = Setting(:data_vintage, "REF", true, "vint", "Date of data") # full constr
     m.testing = true
 
   # Overwriting settings
-    a = gensym() # unlikely to clash
-    b = gensym()
+    global a = gensym() # unlikely to clash
+    global b = gensym()
     m <= Setting(a, 0, true, "abcd", "a")
     m <= Setting(a, 1)
     @test m.test_settings[a].value == 1

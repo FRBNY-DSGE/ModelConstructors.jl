@@ -29,7 +29,7 @@ tomodel_answers[3] = 1.
     for (i,T) in enumerate(subtypes(Transform))
         global u = parameter(:σ_pist, 2.5230, (1e-8, 5.), (1e-8, 5.), T(), fixed=false)
         @test differentiate_transform_to_real_line(u, u.value) == toreal_answers[i]
-        x = transform_to_real_line(u)
+        global x = transform_to_real_line(u)
         @test differentiate_transform_to_model_space(u,x) == tomodel_answers[i]
 
         if !isa(T,Type{ModelConstructors.Untransformed})
@@ -47,7 +47,7 @@ v = parameter(:cat, 2.5230, (1e-8, 5.), (1e-8, 5.), ModelConstructors.Exponentia
 
 pvec =  ParameterVector{Float64}(undef, N)
 for i in 1:length(pvec)
-	pvec[i] = (i%2 == 0) ? u : v
+	global pvec[i] = (i%2 == 0) ? u : v
 end
 @testset "Check logpdf/pdf function approximations" begin
     @test logpdf(pvec) ≈ 50*logpdf(v)
@@ -257,11 +257,11 @@ end
 # Check we can update only specific parameter values in a ParameterVector
 @testset "Test updating specific values of a ParameterVector" begin
     # Check you can overwrite values which are unfixed
-    pvec = ParameterVector{Float64}(undef, 3)
+    global pvec = ParameterVector{Float64}(undef, 3)
     pvec[1] = parameter(:a, 1., (0., 3.), (0., 3.), fixed = false)
     pvec[2] = parameter(:b, 1.)
     pvec[3] = parameter(:c, 1., (0., 3.), (0., 3.), fixed = false)
-    vals = [2., 2.]
+    global vals = [2., 2.]
     update!(pvec, vals, BitArray([true, false, true]))
     @test map(x -> x.value, pvec) == [2., 1., 2.]
 
@@ -270,7 +270,7 @@ end
     pvec[1] = parameter(:a, 1.)
     pvec[2] = parameter(:b, 1.)
     pvec[3] = parameter(:c, 1.)
-    vals = [2., 2.]
+    global vals = [2., 2.]
     update!(pvec, vals, BitArray([true, false, true]))
     @test map(x -> x.value, pvec) == [1., 1., 1.]
 end
