@@ -37,7 +37,7 @@ module ModelConstructors
         rawpath, tablespath, figurespath, logpath, savepath, inpath, filestring,
 
         # parameters.jl
-        parameter, Transform, NullablePrior, AbstractParameter,
+        parameter, parameter_ad, Transform, NullablePrior, AbstractParameter,
         Parameter, ParameterVector, ScaledParameter,
         UnscaledParameter, SteadyStateParameter, SteadyStateParameterGrid,
         transform_to_real_line, transform_to_model_space,

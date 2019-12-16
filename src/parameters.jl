@@ -60,7 +60,7 @@ each others types, we can avoid the issue of having to recast the types of field
 with type `T` to be Duals as well.
 """
 abstract type Parameter{T,U<:Transform} <: AbstractParameter{T} end
-#abstract type Parameter{S<:Real,T,U<:Transform} <: AbstractParameter{T} end
+abstract type ParameterAD{S<:Real,T,U<:Transform} <: AbstractParameter{T} end
 abstract type VectorParameter{V,T,U<:Transform} <: AbstractVectorParameter{V,T} end
 #abstract type ArrayParameter{A,U<:Transform} <: AbstractArrayParameter{A} end
 
@@ -100,10 +100,21 @@ conditions.
   significance.
 - `tex_label::String`: String for printing the parameter name to LaTeX.
 """
-#mutable struct UnscaledParameter{S,T,U} <: Parameter{S,T,U}
-mutable struct UnscaledParameter{T,U} <: Parameter{T,U}
+mutable struct UnscaledParameterAD{S,T,U} <: ParameterAD{S,T,U} # New parameter type for Autodiff
     key::Symbol
-    value::T #S                                # parameter value in model space
+    value::S                                # parameter value in model space
+    valuebounds::Interval{T}                # bounds of parameter value
+    transform_parameterization::Interval{T} # parameters for transformation
+    transform::U                            # transformation between model space and real line for optimization
+    prior::NullablePriorUnivariate                    # prior distribution
+    fixed::Bool                             # is this parameter fixed at some value?
+    description::String
+    tex_label::String               # LaTeX label for printing
+end
+
+mutable struct UnscaledParameter{T,U} <: Parameter{T,U} # Old parameter type
+    key::Symbol
+    value::T                              # parameter value in model space
     valuebounds::Interval{T}                # bounds of parameter value
     transform_parameterization::Interval{T} # parameters for transformation
     transform::U                            # transformation between model space and real line for optimization
@@ -156,7 +167,20 @@ conditions.
   significance.
 - `tex_label::String`: String for printing parameter name to LaTeX.
 """
-#mutable struct ScaledParameter{S,T,U} <: Parameter{S,T,U}
+mutable struct ScaledParameterAD{S,T,U} <: ParameterAD{S,T,U}
+    key::Symbol
+    value::S
+    scaledvalue::S
+    valuebounds::Interval{T}
+    transform_parameterization::Interval{T}
+    transform::U
+    prior::NullablePriorUnivariate
+    fixed::Bool
+    scaling::Function
+    description::String
+    tex_label::String
+end
+
 mutable struct ScaledParameter{T,U} <: Parameter{T,U}
     key::Symbol
     value::T #S
@@ -307,7 +331,7 @@ function Base.show(io::IO, p::SteadyStateParameterArray{T}) where {T}
     @printf io "value:        [%+6f,...,%+6f]\n" p.value[1] p.value[end]
 end
 
-hasprior(p::Union{Parameter, VectorParameter}) = !isnull(p.prior)
+hasprior(p::Union{Parameter, ParameterAD, VectorParameter}) = !isnull(p.prior)
 
 NullableOrPriorUnivariate = Union{NullablePriorUnivariate, ContinuousUnivariateDistribution}
 NullableOrPriorMultivariate = Union{NullablePriorMultivariate, ContinuousMultivariateDistribution}
@@ -410,6 +434,73 @@ function parameter(key::Symbol,
     end
 end
 
+function parameter_ad(key::Symbol,
+                   value::Union{S,V},
+                   valuebounds::Interval{T} = (value,value),
+                   transform_parameterization::Interval{T} = (value,value),
+                   transform::U             = Untransformed(),
+                   prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
+                   fixed::Bool              = true,
+                   scaling::Function        = identity,
+                   description::String = "No description available.",
+                   tex_label::String = "") where {V<:Vector, S<:Real, T <: Float64, U <:Transform}
+
+    # If fixed=true, force bounds to match and leave prior as null.  We need to define new
+    # variable names here because of lexical scoping.
+
+    valuebounds_new = valuebounds
+    transform_parameterization_new = transform_parameterization
+    transform_new = transform
+    U_new = U
+    prior_new = prior
+
+    if fixed
+        # value[1] because need to deal with case in which value is a vector (but if only Float, [1] just takes the Float
+        transform_parameterization_new = (value[1],value[1])  # value is transformed already
+        transform_new = Untransformed()                 # fixed priors should stay untransformed
+        U_new = Untransformed
+
+        if isa(transform, Untransformed)
+            valuebounds_new = (value[1],value[1])
+        end
+    else
+        transform_parameterization_new = transform_parameterization
+    end
+
+    # ensure that we have a Nullable{Distribution}, if not construct one
+    prior_new = if isa(prior_new, NullableOrPriorUnivariate)
+        !isa(prior_new,NullablePriorUnivariate) ? NullablePriorUnivariate(prior_new) : prior_new
+    elseif isa(prior_new, NullableOrPriorMultivariate)
+        !isa(prior_new,NullablePriorMultivariate) ? NullablePriorMultivariate(prior_new) : prior_new
+    else
+        @error "Must be a PriorOrNullable or PriorOrNullableMultivariate"
+    end
+
+    if scaling == identity
+        if typeof(value) <: Real
+            return UnscaledParameterAD{S,T,U_new}(key, value, valuebounds_new,
+                                              transform_parameterization_new, transform_new,
+                                              prior_new, fixed, description, tex_label) #S
+        elseif typeof(value) <: Vector
+            return UnscaledVectorParameter{V,T,U_new}(key, value, valuebounds_new,
+                                              transform_parameterization_new, transform_new,
+                                              prior_new, fixed, description, tex_label)
+        else
+            @error "Type of value not yet supported"
+        end
+    else
+        if typeof(value) <: Real
+            return ScaledParameterAD{S,T,U_new}(key, value, scaling(value), valuebounds_new,
+                                            transform_parameterization_new, transform_new,
+                                            prior_new, fixed, scaling, description, tex_label)
+        elseif typeof(value) <: Vector
+            return ScaledVectorParameter{V,T,U_new}(key, value, scaling(value), valuebounds_new,
+                                            transform_parameterization_new, transform_new,
+                                            prior_new, fixed, scaling, description, tex_label)
+        end
+    end
+end
+
 function parameter(key::Symbol,
                    prior::Union{ContinuousUnivariateDistribution, ContinuousMultivariateDistribution};
                    fixed::Bool = false,
@@ -443,8 +534,18 @@ parameter(p::UnscaledParameter{S,T,U}, newvalue::S) where {S<:Real,T<:Number,U<:
 Returns an UnscaledParameter with value field equal to `newvalue`. If `p` is a fixed
 parameter, it is returned unchanged.
 """
-function parameter(p::UnscaledParameter{T,U}, newvalue::T; #Snew;
-                   change_value_type::Bool = false) where {T <: Number, U <: Transform}
+function parameter(p::UnscaledParameter{T,U}, newvalue::T) where {T <: Number, U <: Transform}
+    p.fixed && return p    # if the parameter is fixed, don't change its value
+    a,b = p.valuebounds
+    if !(a <= newvalue <= b)
+        throw(ParamBoundsError("New value of $(string(p.key)) ($(newvalue)) is out of bounds ($(p.valuebounds))"))
+    end
+    UnscaledParameter{T,U}(p.key, newvalue, p.valuebounds, p.transform_parameterization,
+                           p.transform, p.prior, p.fixed, p.description, p.tex_label)
+end
+
+function parameter_ad(p::UnscaledParameterAD{S,T,U}, newvalue::Snew;
+                   change_value_type::Bool = false) where {S<:Real, Snew<:Real, T <: Number, U <: Transform}
     p.fixed && return p    # if the parameter is fixed, don't change its value
     if !change_value_type && (typeof(p.value) != typeof(newvalue))
         error("Type of newvalue $(newvalue) does not match the type of the current value for parameter $(string(p.key)). Set keyword change_value_type = true if you want to overwrite the type of the parameter value.")
@@ -454,13 +555,14 @@ function parameter(p::UnscaledParameter{T,U}, newvalue::T; #Snew;
         throw(ParamBoundsError("New value of $(string(p.key)) ($(newvalue)) is out of bounds ($(p.valuebounds))"))
     end
     if change_value_type
-        UnscaledParameter{T,U}(p.key, newvalue, p.valuebounds, p.transform_parameterization,
+        UnscaledParameterAD{Snew,T,U}(p.key, newvalue, p.valuebounds, p.transform_parameterization,
                                  p.transform, p.prior, p.fixed, p.description, p.tex_label)
     else
-        UnscaledParameter{T,U}(p.key, newvalue, p.valuebounds, p.transform_parameterization,
+        UnscaledParameterAD{S,T,U}(p.key, newvalue, p.valuebounds, p.transform_parameterization,
                                  p.transform, p.prior, p.fixed, p.description, p.tex_label)
+    end
 end
-end
+
 
 function parameter(p::UnscaledVectorParameter{V,T,U}, newvalue::V) where {V <: Vector, T <: Number, U <: Transform}
     p.fixed && return p    # if the parameter is fixed, don't change its value
@@ -481,8 +583,19 @@ parameter(p::ScaledParameter{S,T,U}, newvalue::S) where {S<:Real, T<:Number,U<:T
 Returns a ScaledParameter with value field equal to `newvalue` and scaledvalue field equal
 to `p.scaling(newvalue)`. If `p` is a fixed parameter, it is returned unchanged.
 """
-function parameter(p::ScaledParameter{T,U}, newvalue::T; #Snew
-                   change_value_type::Bool = false) where {T <: Number, U <: Transform} #S:<Real, Snew:< Real
+function parameter(p::ScaledParameter{T,U}, newvalue::T) where {T <: Number, U <: Transform} #S:<Real, Snew:< Real
+    p.fixed && return p    # if the parameter is fixed, don't change its value
+    a,b = p.valuebounds
+    if !(a <= newvalue <= b)
+        throw(ParamBoundsError("New value of $(string(p.key)) ($(newvalue)) is out of bounds ($(p.valuebounds))"))
+    end
+    ScaledParameter{T,U}(p.key, newvalue, p.scaling(newvalue), p.valuebounds,
+                         p.transform_parameterization, p.transform, p.prior, p.fixed,
+                         p.scaling, p.description, p.tex_label)
+end
+
+function parameter_ad(p::ScaledParameterAD{S,T,U}, newvalue::Snew;
+                      change_value_type::Bool = false) where {S<:Real, Snew<:Real, T<:Number, U<:Transform}
     p.fixed && return p    # if the parameter is fixed, don't change its value
     if !change_value_type && (typeof(p.value) != typeof(newvalue))
         error("Type of newvalue $(newvalue) does not match value of parameter $(string(p.key)).")
@@ -492,15 +605,16 @@ function parameter(p::ScaledParameter{T,U}, newvalue::T; #Snew
         throw(ParamBoundsError("New value of $(string(p.key)) ($(newvalue)) is out of bounds ($(p.valuebounds))"))
     end
     if change_value_type
-        ScaledParameter{T,U}(p.key, newvalue, p.scaling(newvalue), p.valuebounds,
+        ScaledParameterAD{Snew,T,U}(p.key, newvalue, p.scaling(newvalue), p.valuebounds,
                                p.transform_parameterization, p.transform, p.prior, p.fixed,
                                p.scaling, p.description, p.tex_label)
     else
-        ScaledParameter{T,U}(p.key, newvalue, p.scaling(newvalue), p.valuebounds,
+        ScaledParameterAD{S,T,U}(p.key, newvalue, p.scaling(newvalue), p.valuebounds,
                                p.transform_parameterization, p.transform, p.prior, p.fixed,
                                p.scaling, p.description, p.tex_label)
     end
 end
+
 
 function parameter(p::ScaledVectorParameter{V,T,U}, newvalue::V) where {V <: Vector, T <: Number, U <: Transform}
     p.fixed && return p    # if the parameter is fixed, don't change its value
@@ -515,6 +629,26 @@ end
 
 
 function Base.show(io::IO, p::Parameter{T,U}) where {T, U} #S,T,U
+    @printf io "%s\n" typeof(p)
+    @printf io "(:%s)\n%s\n"      p.key p.description
+    @printf io "LaTeX label: %s\n"     p.tex_label
+    @printf io "-----------------------------\n"
+    #@printf io "real value:        %+6f\n" transform_to_real_line(p)
+    @printf io "unscaled, untransformed value:        %+6f\n" p.value
+    isa(p,ScaledParameter) && @printf "scaled, untransformed value:        %+6f\n" p.scaledvalue
+    #!isa(U(),Untransformed) && @printf io "transformed value: %+6f\n" p.value
+
+    if hasprior(p)
+        @printf io "prior distribution:\n\t%s\n" get(p.prior)
+    else
+        @printf io "prior distribution:\n\t%s\n" "no prior"
+    end
+
+    @printf io "transformation for csminwel:\n\t%s" U()
+    @printf io "parameter is %s\n" p.fixed ? "fixed" : "not fixed"
+end
+
+function Base.show(io::IO, p::ParameterAD{S,T,U}) where {S,T,U}
     @printf io "%s\n" typeof(p)
     @printf io "(:%s)\n%s\n"      p.key p.description
     @printf io "LaTeX label: %s\n"     p.tex_label
@@ -583,21 +717,29 @@ a scalar (default=1):
 - SquareRoot:    `(a+b)/2 + (b-a)/2 * c * x/sqrt(1 + c^2 * x^2)`
 - Exponential:   `a + exp(c*(x-b))`
 """
-#(p::Parameter{S,<:Number,Untransformed}, x::S) where S = x
-#function transform_to_model_space(p::Parameter{S,<:Number,SquareRoot})  #transform_to_model_space(p::Parameter{S,<:Number,SquareRoot}, x::S) where S
+transform_to_model_space(p::ParameterAD{S,<:Number,Untransformed}, x::S) where S = x
+function transform_to_model_space(p::ParameterAD{S,<:Number,SquareRoot}, x::S) where S
+    (a,b), c = p.transform_parameterization, one(T)
+    (a+b)/2 + (b-a)/2*c*x/sqrt(1 + c^2 * x^2)
+end
+
 transform_to_model_space(p::Parameter{T,Untransformed}, x::T) where T = x
 function transform_to_model_space(p::Parameter{T,SquareRoot}, x::T) where T
     (a,b), c = p.transform_parameterization, one(T)
     (a+b)/2 + (b-a)/2*c*x/sqrt(1 + c^2 * x^2)
 end
-#function transform_to_model_space(p::Parameter{S,<:Number,Exponential}, x::S) where S
+function transform_to_model_space(p::ParameterAD{S,<:Number,Exponential}, x::S) where S
+    (a,b), c = p.transform_parameterization, one(T)
+    a + exp(c*(x-b))
+end
+
 function transform_to_model_space(p::Parameter{T,Exponential}, x::T) where T
     (a,b), c = p.transform_parameterization, one(T)
     a + exp(c*(x-b))
 end
 
 transform_to_model_space(pvec::ParameterVector{T}, values::Vector{T}) where T = map(transform_to_model_space, pvec, values)
-#transform_to_model_space(pvec::ParameterVector, values::Vector{S}) where S = map(transform_to_model_space, pvec, values)
+transform_to_model_space(pvec::ParameterVector, values::Vector{S}) where S = map(transform_to_model_space, pvec, values)
 
 """
 ```
@@ -618,16 +760,16 @@ Their gradients are therefore
 - SquareRoot:    `(b-a)/2 * c / (1 + c^2 * x^2)^(3/2)`
 - Exponential:   `c * exp(c*(x-b))`
 """
-#=differentiate_transform_to_model_space(p::Parameter{S,<:Number,Untransformed}, x::S) where S = one(S)
-function differentiate_transform_to_model_space(p::Parameter{S,<:Number,SquareRoot}, x::S) where S
+differentiate_transform_to_model_space(p::ParameterAD{S,<:Number,Untransformed}, x::S) where S = one(S)
+function differentiate_transform_to_model_space(p::ParameterAD{S,<:Number,SquareRoot}, x::S) where S
     (a,b), c = p.transform_parameterization, one(S)
     (b-a)/2 * c / (1 + c^2 * x^2)^(3/2)
 end
-function differentiate_transform_to_model_space(p::Parameter{S,<:Number,Exponential}, x::S) where S
+function differentiate_transform_to_model_space(p::ParameterAD{S,<:Number,Exponential}, x::S) where S
     (a,b), c = p.transform_parameterization, one(S)
     c * exp(c*(x-b))
 end
-differentiate_transform_to_model_space(pvec::ParameterVector, values::Vector{S}) where S = map(differentiate_transform_to_model_space, pvec, values)=#
+differentiate_transform_to_model_space(pvec::ParameterVector, values::Vector{S}) where S = map(differentiate_transform_to_model_space, pvec, values)
 
 """
 ```
@@ -642,8 +784,8 @@ where (a,b) = p.transform_parameterization, c a scalar (default=1), and x = p.va
 - SquareRoot:   (1/c)*cx/sqrt(1 - cx^2), where cx =  2 * (x - (a+b)/2)/(b-a)
 - Exponential:   b + (1 / c) * log(x-a)
 """
-#=transform_to_real_line(p::Parameter{S,<:Number,Untransformed}, x::S = p.value) where S = x
-function transform_to_real_line(p::Parameter{S,<:Number,SquareRoot}, x::S = p.value) where S
+transform_to_real_line(p::ParameterAD{S,<:Number,Untransformed}, x::S = p.value) where S = x
+function transform_to_real_line(p::ParameterAD{S,<:Number,SquareRoot}, x::S = p.value) where S
     (a,b), c = p.transform_parameterization, one(S)
     cx = 2. * (x - (a+b)/2.)/(b-a)
     if cx^2 >1
@@ -656,14 +798,14 @@ function transform_to_real_line(p::Parameter{S,<:Number,SquareRoot}, x::S = p.va
     end
     (1/c)*cx/sqrt(1 - cx^2)
 end
-function transform_to_real_line(p::Parameter{S,<:Number,Exponential}, x::S = p.value) where S
+function transform_to_real_line(p::ParameterAD{S,<:Number,Exponential}, x::S = p.value) where S
     (a,b),c = p.transform_parameterization,one(S)
     b + (1 ./ c) * log(x-a)
 end
 
 transform_to_real_line(pvec::ParameterVector, values::Vector{S}) where S  = map(transform_to_real_line, pvec, values)
 transform_to_real_line(pvec::ParameterVector{S}) where S = map(transform_to_real_line, pvec)
-=#
+
 transform_to_real_line(p::Parameter{T,Untransformed}, x::T = p.value) where T = x
 function transform_to_real_line(p::Parameter{T,SquareRoot}, x::T = p.value) where T
     (a,b), c = p.transform_parameterization, one(T)
@@ -705,18 +847,18 @@ Their gradients are therefore
 - SquareRoot:    `(1/c) * (1 / ( 1 - cx^2)^(-3/2)) * (2/(b-a))`
 - Exponential:   `1 / (c * (x - a))`
 """
-#=differentiate_transform_to_real_line(p::Parameter{S,<:Number,Untransformed}, x::S) where S = one(S)
-function differentiate_transform_to_real_line(p::Parameter{S,<:Number,SquareRoot}, x::S) where S
+differentiate_transform_to_real_line(p::ParameterAD{S,<:Number,Untransformed}, x::S) where S = one(S)
+function differentiate_transform_to_real_line(p::ParameterAD{S,<:Number,SquareRoot}, x::S) where S
     (a,b), c = p.transform_parameterization, one(S)
     cx = 2 * (x - (a+b)/2)/(b-a)
     (1/c) * (1 / (1 - cx^2)^(-3/2)) * (2/(b-a))
 end
-function differentiate_transform_to_real_line(p::Parameter{S,<:Number,Exponential}, x::S) where S
+function differentiate_transform_to_real_line(p::ParameterAD{S,<:Number,Exponential}, x::S) where S
     (a,b), c = p.transform_parameterization, one(S)
     1 / (c * (x - a))
 end
 differentiate_transform_to_real_line(pvec::ParameterVector, values::Vector{S}) where S = map(differentiate_transform_to_real_line, pvec, values)
-differentiate_transform_to_real_line(pvec::ParameterVector{S}) where S = map(differentiate_transform_to_real_line, pvec)=#
+differentiate_transform_to_real_line(pvec::ParameterVector{S}) where S = map(differentiate_transform_to_real_line, pvec)
 
 # define operators to work on parameters
 
