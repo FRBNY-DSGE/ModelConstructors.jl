@@ -25,7 +25,7 @@ x = transform_to_real_line(parameter(:σ_pist, 2.5230, (1e-8, 5.), (1e-8, 5.),
                                      ModelConstructors.SquareRoot(), fixed=false))
 tomodel_answers[2] = (b - a) / 2 * c / (1 + c^2 * x^2)^(3/2)
 tomodel_answers[3] = 1.
-@testset "Ensure derivatives of transformations to the real line/model space are valid" begin
+#=@testset "Ensure derivatives of transformations to the real line/model space are valid" begin
     for (i,T) in enumerate(subtypes(Transform))
         global u = parameter(:σ_pist, 2.5230, (1e-8, 5.), (1e-8, 5.), T(), fixed=false)
         @test differentiate_transform_to_real_line(u, u.value) == toreal_answers[i]
@@ -38,7 +38,7 @@ tomodel_answers[3] = 1.
         end
     end
 
-end
+end=#
 
 # probability
 N = 10^2
@@ -74,11 +74,11 @@ end
 end
 
 # vector of new values must be the same length
-@testset "Ensure update! enforces the same length of the parameter vector being updated" begin
+#=@testset "Ensure update! enforces the same length of the parameter vector being updated" begin
     @test_throws AssertionError ModelConstructors.update!(pvec, ones(length(pvec)-1))
-end
+end =#
 
-@testset "Ensure parameters being updated are of the same type." begin
+#=@testset "Ensure parameters being updated are of the same type." begin
     for w in [parameter(:moop, 3.0, fixed=false), parameter(:moop, 3.0; scaling = log, fixed=false)]
         # new values must be of the same type
         @test_throws ErrorException parameter(w, one(Int))
@@ -93,7 +93,7 @@ end
         # new values must be of the same type
         @test typeof(parameter(w, one(Int); change_value_type = true).value) == Int
     end
-end
+end =#
 
 # subspecs
 function sstest(m::AnSchorfheide)
