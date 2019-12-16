@@ -1,3 +1,6 @@
+# ModelConstructors.jl v0.1.7 Release Notes
+- Temporarily revert back to old Parameter types to fix SMC.jl tests and allow full backwards compatibility to old Parameters
+
 # ModelConstructors.jl v0.1.6 Release Notes
 - Resolve package compatibility issues, so as to be backwards-compatible with Julia 0.7.
 
