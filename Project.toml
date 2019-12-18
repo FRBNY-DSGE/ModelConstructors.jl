@@ -1,6 +1,6 @@
 name = "ModelConstructors"
 uuid = "e47e5152-bd14-11e9-1b46-c951f0a7041d"
-authors = ["William Chen <william.chen@ny.frb.org", "Ethan Matlin <ethanmatlin@gmail.com>", "Reca Sarfati <rebecca.sarfati@ny.frb.org"]
+authors = ["William Chen <william.chen@ny.frb.org>", "Ethan Matlin <ethanmatlin@gmail.com>", "Reca Sarfati <rebecca_sarfati@alumni.brown.edu>"]
 version = "0.1.8"
 
 [deps]
