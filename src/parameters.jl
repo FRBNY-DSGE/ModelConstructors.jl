@@ -68,11 +68,11 @@ abstract type VectorParameter{V,T,U<:Transform} <: AbstractVectorParameter{V,T} 
 # that takes any subtype of AbstractParameter, but it is not
 # an "abstract" type since we are not intending
 # to define subtypes of ParameterVector.
-ParameterVector{T}       =  Vector{AbstractParameter{T}}
+ParameterVector{T}         =  Vector{AbstractParameter{T}}
 VectorParameterVector{V,T} =  Vector{AbstractVectorParameter{V,T}}
-#ArrayParameterVector{A}  =  Vector{AbstractArrayParameter{A}}
-NullablePriorUnivariate   =  Nullables.Nullable{ContinuousUnivariateDistribution}
-NullablePriorMultivariate =  Nullables.Nullable{ContinuousMultivariateDistribution}
+#ArrayParameterVector{A}   =  Vector{AbstractArrayParameter{A}}
+NullablePriorUnivariate    =  Nullables.Nullable{ContinuousUnivariateDistribution}
+NullablePriorMultivariate  =  Nullables.Nullable{ContinuousMultivariateDistribution}
 
 """
 ```
@@ -435,15 +435,15 @@ function parameter(key::Symbol,
 end
 
 function parameter_ad(key::Symbol,
-                   value::Union{S,V},
-                   valuebounds::Interval{T} = (value,value),
-                   transform_parameterization::Interval{T} = (value,value),
-                   transform::U             = Untransformed(),
-                   prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
-                   fixed::Bool              = true,
-                   scaling::Function        = identity,
-                   description::String = "No description available.",
-                   tex_label::String = "") where {V<:Vector, S<:Real, T <: Float64, U <:Transform}
+                      value::Union{S,V},
+                      valuebounds::Interval{T} = (value,value),
+                      transform_parameterization::Interval{T} = (value,value),
+                      transform::U             = Untransformed(),
+                      prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
+                      fixed::Bool              = true,
+                      scaling::Function        = identity,
+                      description::String = "No description available.",
+                      tex_label::String = "") where {V<:Vector, S<:Real, T <: Float64, U <:Transform}
 
     # If fixed=true, force bounds to match and leave prior as null.  We need to define new
     # variable names here because of lexical scoping.
@@ -719,7 +719,7 @@ a scalar (default=1):
 """
 transform_to_model_space(p::ParameterAD{S,<:Number,Untransformed}, x::S) where S = x
 function transform_to_model_space(p::ParameterAD{S,<:Number,SquareRoot}, x::S) where S
-    (a,b), c = p.transform_parameterization, one(T)
+    (a,b), c = p.transform_parameterization, one(S)
     (a+b)/2 + (b-a)/2*c*x/sqrt(1 + c^2 * x^2)
 end
 
@@ -729,7 +729,7 @@ function transform_to_model_space(p::Parameter{T,SquareRoot}, x::T) where T
     (a+b)/2 + (b-a)/2*c*x/sqrt(1 + c^2 * x^2)
 end
 function transform_to_model_space(p::ParameterAD{S,<:Number,Exponential}, x::S) where S
-    (a,b), c = p.transform_parameterization, one(T)
+    (a,b), c = p.transform_parameterization, one(S)
     a + exp(c*(x-b))
 end
 
