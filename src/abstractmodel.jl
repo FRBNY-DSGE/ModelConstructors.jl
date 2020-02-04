@@ -14,7 +14,7 @@ end
     end
 end
 
-# need to define like this so we can disable bounds checking
+# Need to define like this so as to disable bounds checking
 @inline function Base.getindex(m::AbstractModel, k::Symbol)
     i = m.keys[k]
     @inbounds if i <= (j = length(m.parameters))

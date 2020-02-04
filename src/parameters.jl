@@ -60,7 +60,7 @@ each others types, we can avoid the issue of having to recast the types of field
 with type `T` to be Duals as well.
 """
 abstract type Parameter{T,U<:Transform} <: AbstractParameter{T} end
-abstract type ParameterAD{S<:Real,T,U<:Transform} <: AbstractParameter{T} end
+abstract type ParameterAD{S<:Real,T,U} <: Parameter{T,U} end
 abstract type VectorParameter{V,T,U<:Transform} <: AbstractVectorParameter{V,T} end
 #abstract type ArrayParameter{A,U<:Transform} <: AbstractArrayParameter{A} end
 
@@ -937,6 +937,26 @@ for f in (:(Base.exp),
     end
 end
 
+# Define scalar functional mappings and comparisons
+for f in (:(Base.exp),
+          :(Base.log),
+          :(Base.transpose),
+          :(Base.:-),
+          :(Base.:<),
+          :(Base.:>),
+          :(Base.:<=),
+          :(Base.:>=))
+
+    @eval ($f)(p::UnscaledOrSteadyState) = ($f)(p.value)
+    @eval ($f)(p::ScaledParameterAD) = ($f)(p.scaledvalue)
+
+    if f != :(Base.:-)
+        @eval ($f)(p::UnscaledOrSteadyState, x::Number) = ($f)(p.value, x)
+        @eval ($f)(p::ScaledParameterAD, x::Number) = ($f)(p.scaledvalue, x)
+    end
+end
+
+
 # Define scalar operators on grids
 for op in (:(Base.:+),
            :(Base.:-),
@@ -978,12 +998,19 @@ function update!(pvec::ParameterVector, values::Vector{T};
                  change_value_type::Bool = false) where T
     # this function is optimised for speed
     @assert length(values) == length(pvec) "Length of input vector (=$(length(values))) must match length of parameter vector (=$(length(pvec)))"
-
     if change_value_type
-        tmp = (x,y) -> parameter(x, y; change_value_type = change_value_type)
+        tmp = if typeof(pvec[1]) <: ParameterAD
+            (x,y) -> parameter_ad(x, y; change_value_type = change_value_type)
+        else
+            (x,y) -> parameter(x, y; change_value_type = change_value_type)
+        end
         map!(tmp, pvec, pvec, values)
     else
-        map!(parameter, pvec, pvec, values)
+        if typeof(pvec[1]) <: ParameterAD
+            map!(parameter_ad, pvec, pvec, values)
+        else
+            map!(parameter, pvec, pvec, values)
+        end
     end
 end
 
