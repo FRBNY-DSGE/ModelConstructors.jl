@@ -14,7 +14,7 @@ computational settings.
 - `print::Bool`: Indicates whether to append this setting's code and value to output file
   names. If true, output file names will include a suffix of the form `_code1=val1_code2=val2`
   etc. where codes are listed in alphabetical order.
-- `code::String`: string of <=4 characters to print to output file suffixes when
+- `code::String`: string to print to output file suffixes when
   `print=true`.
 - `description::String`: Short description of what the setting is used for.
 """
