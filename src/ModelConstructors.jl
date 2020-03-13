@@ -12,6 +12,7 @@ module ModelConstructors
     import Distributions.rand, Distributions.Matrixvariate, Distributions.LinearAlgebra
     import LinearAlgebra.rank
     import SpecialFunctions.gamma
+    import QuadGK.quadgk
     export
         # distributions_ext.jl
         BetaAlt, GammaAlt, RootInverseGamma, DegenerateMvNormal, DegenerateDiagMvTDist,
@@ -49,7 +50,7 @@ module ModelConstructors
         # distributions_ext.jl
         Uniform, Exponential, Normal, BetaAlt, GammaAlt, RootInverseGamma, pdf, logpdf, rand,
         DegenerateMvNormal, rank, length, DgenerateDiagMvTDist, mean, std,
-        MatrixNormal, size, params,
+        MatrixNormal, size, params, truncmean,
 
         AbstractVectorParameter, VectorParameter, VectorParameterVector, ScaledVectorParameter,
         UnscaledVectorParameter, Untransformed,

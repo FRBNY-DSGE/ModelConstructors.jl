@@ -383,3 +383,31 @@ function Distributions.logpdf(d::MatrixNormal, x::Matrix)
     V_inv = d.V_inv
     return -.5*trace(V_inv * (x-μ)' * U_inv * (x-μ)) - log((2π)^(n*p/2) * det(U)^(p/2) * det(V)^(n/2))
 end
+
+"""
+```
+truncmean(Dist::Truncated)
+```
+Computes the mean of truncated continuous and discrete distributions.
+Written by person in this [comment](https://github.com/JuliaStats/Distributions.jl/issues/709).
+Thanks, dude!
+"""
+function truncmean(Dist::Truncated)
+    F(x) = x*pdf(Dist,x)
+    y = 0.0;
+
+    if typeof(Dist) <: ContinuousDistribution # Continuous distribution
+        y = quadgk(F, Dist.lower, Dist.upper)[1]
+
+    else # Discrete distriubtion
+        x = ceil(Dist.lower)
+        q_max = 1 - 1E-9;
+        x_max = min(Dist.upper, quantile(Dist.untruncated, q_max))
+
+        while x < x_max
+            y += F(x)
+            x += 1
+        end
+    end
+    return y
+end
