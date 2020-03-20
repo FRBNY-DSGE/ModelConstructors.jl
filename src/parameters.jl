@@ -580,12 +580,22 @@ a scalar (default=1):
 - SquareRoot:    `(a+b)/2 + (b-a)/2 * c * x/sqrt(1 + c^2 * x^2)`
 - Exponential:   `a + exp(c*(x-b))`
 """
-transform_to_model_space(p::Parameter{S,<:Number,Untransformed}, x::S) where S = x
+transform_to_model_space(p::Parameter{S, <:Number, Untransformed}, x::S) where S = x
 function transform_to_model_space(p::Parameter{S,<:Number,SquareRoot}, x::S) where S
     (a,b), c = p.transform_parameterization, one(S)
     (a+b)/2 + (b-a)/2*c*x/sqrt(1 + c^2 * x^2)
 end
 function transform_to_model_space(p::Parameter{S,<:Number,Exponential}, x::S) where S
+    (a,b), c = p.transform_parameterization, one(S)
+    a + exp(c*(x-b))
+end
+
+transform_to_model_space(p::Parameter{S, <:Number, Untransformed}, x::R) where {S <: ForwardDiff.Dual, R} = x
+function transform_to_model_space(p::Parameter{S,<:Number,SquareRoot}, x::R) where {S <: ForwardDiff.Dual, R}
+    (a,b), c = p.transform_parameterization, one(S)
+    (a+b)/2 + (b-a)/2*c*x/sqrt(1 + c^2 * x^2)
+end
+function transform_to_model_space(p::Parameter{S,<:Number,Exponential}, x::R) where {S <: ForwardDiff.Dual, R}
     (a,b), c = p.transform_parameterization, one(S)
     a + exp(c*(x-b))
 end
@@ -617,6 +627,15 @@ function differentiate_transform_to_model_space(p::Parameter{S,<:Number,SquareRo
     (b-a)/2 * c / (1 + c^2 * x^2)^(3/2)
 end
 function differentiate_transform_to_model_space(p::Parameter{S,<:Number,Exponential}, x::S) where S
+    (a,b), c = p.transform_parameterization, one(S)
+    c * exp(c*(x-b))
+end
+differentiate_transform_to_model_space(p::Parameter{S,<:Number,Untransformed}, x::R) where {S <: ForwardDiff.Dual, R} = one(S)
+function differentiate_transform_to_model_space(p::Parameter{S,<:Number,SquareRoot}, x::R) where {S <: ForwardDiff.Dual, R}
+    (a,b), c = p.transform_parameterization, one(S)
+    (b-a)/2 * c / (1 + c^2 * x^2)^(3/2)
+end
+function differentiate_transform_to_model_space(p::Parameter{S,<:Number,Exponential}, x::R) where {S <: ForwardDiff.Dual, R}
     (a,b), c = p.transform_parameterization, one(S)
     c * exp(c*(x-b))
 end
@@ -654,6 +673,25 @@ function transform_to_real_line(p::Parameter{S,<:Number,Exponential}, x::S = p.v
     b + (1 ./ c) * log(x-a)
 end
 
+transform_to_real_line(p::Parameter{S,<:Number,Untransformed}, x::R = p.value) where {S <: ForwardDiff.Dual, R} = x
+function transform_to_real_line(p::Parameter{S,<:Number,SquareRoot}, x::R = p.value) where {S <: ForwardDiff.Dual, R}
+    (a,b), c = p.transform_parameterization, one(S)
+    cx = 2. * (x - (a+b)/2.)/(b-a)
+    if cx^2 >1
+        println("Parameter is: $(p.key)")
+        println("a is $a")
+        println("b is $b")
+        println("x is $x")
+        println("cx is $cx")
+        error("invalid paramter value")
+    end
+    (1/c)*cx/sqrt(1 - cx^2)
+end
+function transform_to_real_line(p::Parameter{S,<:Number,Exponential}, x::R = p.value) where {S <: ForwardDiff.Dual, R}
+    (a,b),c = p.transform_parameterization,one(S)
+    b + (1 ./ c) * log(x-a)
+end
+
 transform_to_real_line(pvec::ParameterVector, values::Vector{S}) where S  = map(transform_to_real_line, pvec, values)
 transform_to_real_line(pvec::ParameterVector{S}) where S = map(transform_to_real_line, pvec)
 
@@ -686,6 +724,18 @@ function differentiate_transform_to_real_line(p::Parameter{S,<:Number,Exponentia
     (a,b), c = p.transform_parameterization, one(S)
     1 / (c * (x - a))
 end
+
+differentiate_transform_to_real_line(p::Parameter{S,<:Number,Untransformed}, x::R) where {S <: ForwardDiff.Dual, R} = one(S)
+function differentiate_transform_to_real_line(p::Parameter{S,<:Number,SquareRoot}, x::R) where {S <: ForwardDiff.Dual, R}
+    (a,b), c = p.transform_parameterization, one(S)
+    cx = 2 * (x - (a+b)/2)/(b-a)
+    (1/c) * (1 / (1 - cx^2)^(-3/2)) * (2/(b-a))
+end
+function differentiate_transform_to_real_line(p::Parameter{S,<:Number,Exponential}, x::R) where {S <: ForwardDiff.Dual, R}
+    (a,b), c = p.transform_parameterization, one(S)
+    1 / (c * (x - a))
+end
+
 differentiate_transform_to_real_line(pvec::ParameterVector, values::Vector{S}) where S = map(differentiate_transform_to_real_line, pvec, values)
 differentiate_transform_to_real_line(pvec::ParameterVector{S}) where S = map(differentiate_transform_to_real_line, pvec)
 
@@ -803,7 +853,7 @@ Update all parameters in `pvec` that are not fixed with
 `values`. Length of `values` must equal length of `pvec`.
 Function optimized for speed.
 """
-function update!(pvec::ParameterVector, values::Vector{S};
+function update!(pvec::ParameterVector, values::AbstractVector{S};
                  change_value_type::Bool = false) where S
     # this function is optimised for speed
     @assert length(values) == length(pvec) "Length of input vector (=$(length(values))) must match length of parameter vector (=$(length(pvec)))"
