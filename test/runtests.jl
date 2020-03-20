@@ -8,6 +8,7 @@ my_tests = [
             "distributions_ext",
             "settings",
             "paths",
+            "statistics",
             ]
 
 for test in my_tests
