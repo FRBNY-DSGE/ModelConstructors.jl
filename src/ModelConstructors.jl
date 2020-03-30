@@ -12,7 +12,6 @@ module ModelConstructors
     import Distributions.rand, Distributions.Matrixvariate, Distributions.LinearAlgebra
     import LinearAlgebra.rank
     import SpecialFunctions.gamma
-    import QuadGK.quadgk
     export
         # distributions_ext.jl
         BetaAlt, GammaAlt, RootInverseGamma, DegenerateMvNormal, DegenerateDiagMvTDist,
