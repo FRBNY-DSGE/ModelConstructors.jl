@@ -69,6 +69,8 @@ module ModelConstructors
     	const VERBOSITY = Dict(:none => 0, :low => 1, :high => 2)
 
     include("parameters.jl")
+    include("vector_parameters.jl")
+    include("parameters_methods.jl")
     include("distributions_ext.jl")
     include("abstractmodel.jl")
     include("settings.jl")
