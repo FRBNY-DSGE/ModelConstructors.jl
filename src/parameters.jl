@@ -108,6 +108,7 @@ mutable struct UnscaledParameterAD{S,T,U} <: ParameterAD{S,T,U} # New parameter 
     transform::U                            # transformation between model space and real line for optimization
     prior::NullablePriorUnivariate                    # prior distribution
     fixed::Bool                             # is this parameter fixed at some value?
+    regimes::Dict{Symbol,Dict{Int64,Any}}
     description::String
     tex_label::String               # LaTeX label for printing
 end
@@ -120,6 +121,7 @@ mutable struct UnscaledParameter{T,U} <: Parameter{T,U} # Old parameter type
     transform::U                            # transformation between model space and real line for optimization
     prior::NullablePriorUnivariate                    # prior distribution
     fixed::Bool                             # is this parameter fixed at some value?
+    regimes::Dict{Symbol,Dict{Int64,Any}}
     description::String
     tex_label::String               # LaTeX label for printing
 end
@@ -132,6 +134,7 @@ mutable struct UnscaledVectorParameter{V,T,U} <: VectorParameter{V,T,U}
     transform::U                            # transformation between model space and real line for optimization
     prior::NullablePriorMultivariate                   # prior distribution
     fixed::Bool                             # is this parameter fixed at some value?
+    regimes::Dict{Symbol,Dict{Int64,Any}}
     description::String
     tex_label::String               # LaTeX label for printing
 end
@@ -177,6 +180,7 @@ mutable struct ScaledParameterAD{S,T,U} <: ParameterAD{S,T,U}
     prior::NullablePriorUnivariate
     fixed::Bool
     scaling::Function
+    regimes::Dict{Symbol,Dict{Int64,Any}}
     description::String
     tex_label::String
 end
@@ -191,6 +195,7 @@ mutable struct ScaledParameter{T,U} <: Parameter{T,U}
     prior::NullablePriorUnivariate
     fixed::Bool
     scaling::Function
+    regimes::Dict{Symbol,Dict{Int64,Any}}
     description::String
     tex_label::String
 end
@@ -205,6 +210,7 @@ mutable struct ScaledVectorParameter{V,T,U} <: VectorParameter{V,T,U}
     prior::NullablePriorMultivariate
     fixed::Bool
     scaling::Function
+    regimes::Dict{Symbol,Dict{Int64,Any}}
     description::String
     tex_label::String
 end
@@ -375,6 +381,7 @@ function parameter(key::Symbol,
                    prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
                    fixed::Bool              = true,
                    scaling::Function        = identity,
+                   regimes::Dict{Symbol,Dict{Int64,Any}} = Dict{Symbol,Dict{Int64,Any}}()
                    description::String = "No description available.",
                    tex_label::String = "") where {V<:Vector, T <: Float64, U <:Transform} #{V<:Vector, S<:Real, T <: Float64, U <:Transform}
 
@@ -413,11 +420,11 @@ function parameter(key::Symbol,
         if typeof(value) <: Number #Real
             return UnscaledParameter{T,U_new}(key, value, valuebounds_new,
                                               transform_parameterization_new, transform_new,
-                                              prior_new, fixed, description, tex_label) #S
+                                              prior_new, fixed, regimes, description, tex_label) #S
         elseif typeof(value) <: Vector
             return UnscaledVectorParameter{V,T,U_new}(key, value, valuebounds_new,
                                               transform_parameterization_new, transform_new,
-                                              prior_new, fixed, description, tex_label)
+                                              prior_new, fixed, regimes, description, tex_label)
         else
             @error "Type of value not yet supported"
         end
@@ -425,11 +432,11 @@ function parameter(key::Symbol,
         if typeof(value) <: Number #Real
             return ScaledParameter{T,U_new}(key, value, scaling(value), valuebounds_new,
                                             transform_parameterization_new, transform_new,
-                                            prior_new, fixed, scaling, description, tex_label)
+                                            prior_new, fixed, scaling, regimes, description, tex_label)
         elseif typeof(value) <: Vector
             return ScaledVectorParameter{V,T,U_new}(key, value, scaling(value), valuebounds_new,
                                             transform_parameterization_new, transform_new,
-                                            prior_new, fixed, scaling, description, tex_label)
+                                            prior_new, fixed, scaling, regimes, description, tex_label)
         end
     end
 end
@@ -442,6 +449,7 @@ function parameter_ad(key::Symbol,
                       prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
                       fixed::Bool              = true,
                       scaling::Function        = identity,
+                      regimes::Dict{Symbol,Dict{Int64,Any}} = Dict{Symbol,Dict{Int64,Any}}()
                       description::String = "No description available.",
                       tex_label::String = "") where {V<:Vector, S<:Real, T <: Float64, U <:Transform}
 
@@ -480,11 +488,11 @@ function parameter_ad(key::Symbol,
         if typeof(value) <: Real
             return UnscaledParameterAD{S,T,U_new}(key, value, valuebounds_new,
                                               transform_parameterization_new, transform_new,
-                                              prior_new, fixed, description, tex_label) #S
+                                              prior_new, fixed, regimes, description, tex_label) #S
         elseif typeof(value) <: Vector
             return UnscaledVectorParameter{V,T,U_new}(key, value, valuebounds_new,
                                               transform_parameterization_new, transform_new,
-                                              prior_new, fixed, description, tex_label)
+                                              prior_new, fixed, regimes, description, tex_label)
         else
             @error "Type of value not yet supported"
         end
@@ -492,11 +500,11 @@ function parameter_ad(key::Symbol,
         if typeof(value) <: Real
             return ScaledParameterAD{S,T,U_new}(key, value, scaling(value), valuebounds_new,
                                             transform_parameterization_new, transform_new,
-                                            prior_new, fixed, scaling, description, tex_label)
+                                            prior_new, fixed, scaling, regimes, description, tex_label)
         elseif typeof(value) <: Vector
             return ScaledVectorParameter{V,T,U_new}(key, value, scaling(value), valuebounds_new,
                                             transform_parameterization_new, transform_new,
-                                            prior_new, fixed, scaling, description, tex_label)
+                                            prior_new, fixed, scaling, regimes, description, tex_label)
         end
     end
 end
@@ -541,7 +549,7 @@ function parameter(p::UnscaledParameter{T,U}, newvalue::T) where {T <: Number, U
         throw(ParamBoundsError("New value of $(string(p.key)) ($(newvalue)) is out of bounds ($(p.valuebounds))"))
     end
     UnscaledParameter{T,U}(p.key, newvalue, p.valuebounds, p.transform_parameterization,
-                           p.transform, p.prior, p.fixed, p.description, p.tex_label)
+                           p.transform, p.prior, p.fixed, p.regimes, p.description, p.tex_label)
 end
 
 function parameter_ad(p::UnscaledParameterAD{S,T,U}, newvalue::Snew;
@@ -556,10 +564,10 @@ function parameter_ad(p::UnscaledParameterAD{S,T,U}, newvalue::Snew;
     end
     if change_value_type
         UnscaledParameterAD{Snew,T,U}(p.key, newvalue, p.valuebounds, p.transform_parameterization,
-                                 p.transform, p.prior, p.fixed, p.description, p.tex_label)
+                                 p.transform, p.prior, p.fixed, p.regimes, p.description, p.tex_label)
     else
         UnscaledParameterAD{S,T,U}(p.key, newvalue, p.valuebounds, p.transform_parameterization,
-                                 p.transform, p.prior, p.fixed, p.description, p.tex_label)
+                                 p.transform, p.prior, p.fixed, p.regimes, p.description, p.tex_label)
     end
 end
 
@@ -571,7 +579,7 @@ function parameter(p::UnscaledVectorParameter{V,T,U}, newvalue::V) where {V <: V
         throw(ParamBoundsError("New value of $(string(p.key)) ($(newvalue)) is out of bounds ($(p.valuebounds))"))
     end
     UnscaledVectorParameter{V,T,U}(p.key, newvalue, p.valuebounds, p.transform_parameterization,
-                           p.transform, p.prior, p.fixed, p.description, p.tex_label)
+                           p.transform, p.prior, p.fixed, p.regimes, p.description, p.tex_label)
 end
 
 
@@ -591,7 +599,7 @@ function parameter(p::ScaledParameter{T,U}, newvalue::T) where {T <: Number, U <
     end
     ScaledParameter{T,U}(p.key, newvalue, p.scaling(newvalue), p.valuebounds,
                          p.transform_parameterization, p.transform, p.prior, p.fixed,
-                         p.scaling, p.description, p.tex_label)
+                         p.scaling, p.regimes, p.description, p.tex_label)
 end
 
 function parameter_ad(p::ScaledParameterAD{S,T,U}, newvalue::Snew;
@@ -607,11 +615,11 @@ function parameter_ad(p::ScaledParameterAD{S,T,U}, newvalue::Snew;
     if change_value_type
         ScaledParameterAD{Snew,T,U}(p.key, newvalue, p.scaling(newvalue), p.valuebounds,
                                p.transform_parameterization, p.transform, p.prior, p.fixed,
-                               p.scaling, p.description, p.tex_label)
+                               p.scaling, p.regimes, p.description, p.tex_label)
     else
         ScaledParameterAD{S,T,U}(p.key, newvalue, p.scaling(newvalue), p.valuebounds,
                                p.transform_parameterization, p.transform, p.prior, p.fixed,
-                               p.scaling, p.description, p.tex_label)
+                               p.scaling, p.regimes, p.description, p.tex_label)
     end
 end
 
@@ -624,7 +632,7 @@ function parameter(p::ScaledVectorParameter{V,T,U}, newvalue::V) where {V <: Vec
     end
     ScaledVectorParameter{V,T,U}(p.key, newvalue, p.scaling.(newvalue), p.valuebounds,
                          p.transform_parameterization, p.transform, p.prior, p.fixed,
-                         p.scaling, p.description, p.tex_label)
+                         p.scaling, p.regimes, p.description, p.tex_label)
 end
 
 
