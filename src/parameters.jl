@@ -106,22 +106,22 @@ mutable struct UnscaledParameterAD{S,T,U} <: ParameterAD{S,T,U} # New parameter 
     valuebounds::Interval{T}                # bounds of parameter value
     transform_parameterization::Interval{T} # parameters for transformation
     transform::U                            # transformation between model space and real line for optimization
-    prior::NullablePriorUnivariate          # prior distribution
+    prior::NullablePriorUnivariate                    # prior distribution
     fixed::Bool                             # is this parameter fixed at some value?
     description::String
-    tex_label::String                       # LaTeX label for printing
+    tex_label::String               # LaTeX label for printing
 end
 
 mutable struct UnscaledParameter{T,U} <: Parameter{T,U} # Old parameter type
     key::Symbol
-    value::T                                # parameter value in model space
+    value::T                              # parameter value in model space
     valuebounds::Interval{T}                # bounds of parameter value
     transform_parameterization::Interval{T} # parameters for transformation
     transform::U                            # transformation between model space and real line for optimization
-    prior::NullablePriorUnivariate          # prior distribution
+    prior::NullablePriorUnivariate                    # prior distribution
     fixed::Bool                             # is this parameter fixed at some value?
     description::String
-    tex_label::String                       # LaTeX label for printing
+    tex_label::String               # LaTeX label for printing
 end
 
 mutable struct UnscaledVectorParameter{V,T,U} <: VectorParameter{V,T,U}
@@ -133,7 +133,7 @@ mutable struct UnscaledVectorParameter{V,T,U} <: VectorParameter{V,T,U}
     prior::NullablePriorMultivariate                   # prior distribution
     fixed::Bool                             # is this parameter fixed at some value?
     description::String
-    tex_label::String                       # LaTeX label for printing
+    tex_label::String               # LaTeX label for printing
 end
 
 
@@ -333,7 +333,7 @@ end
 
 hasprior(p::Union{Parameter, ParameterAD, VectorParameter}) = !isnull(p.prior)
 
-NullableOrPriorUnivariate   = Union{NullablePriorUnivariate,   ContinuousUnivariateDistribution}
+NullableOrPriorUnivariate = Union{NullablePriorUnivariate, ContinuousUnivariateDistribution}
 NullableOrPriorMultivariate = Union{NullablePriorMultivariate, ContinuousMultivariateDistribution}
 
 # We want to use value field from UnscaledParameters and
@@ -882,14 +882,14 @@ for op in (:(Base.:+),
            :(Base.:^))
 
     @eval ($op)(p::UnscaledOrSteadyState, q::UnscaledOrSteadyState) = ($op)(p.value, q.value)
-    @eval ($op)(p::UnscaledOrSteadyState, x::Integer)               = ($op)(p.value, x)
-    @eval ($op)(p::UnscaledOrSteadyState, x::Number)                = ($op)(p.value, x)
-    @eval ($op)(x::Number, p::UnscaledOrSteadyState)                = ($op)(x, p.value)
+    @eval ($op)(p::UnscaledOrSteadyState, x::Integer)            = ($op)(p.value, x)
+    @eval ($op)(p::UnscaledOrSteadyState, x::Number)            = ($op)(p.value, x)
+    @eval ($op)(x::Number, p::UnscaledOrSteadyState)            = ($op)(x, p.value)
 
     @eval ($op)(p::ScaledParameter, q::ScaledParameter) = ($op)(p.scaledvalue, q.scaledvalue)
-    @eval ($op)(p::ScaledParameter, x::Integer)         = ($op)(p.scaledvalue, x)
-    @eval ($op)(p::ScaledParameter, x::Number)          = ($op)(p.scaledvalue, x)
-    @eval ($op)(x::Number, p::ScaledParameter)          = ($op)(x, p.scaledvalue)
+    @eval ($op)(p::ScaledParameter, x::Integer)            = ($op)(p.scaledvalue, x)
+    @eval ($op)(p::ScaledParameter, x::Number)            = ($op)(p.scaledvalue, x)
+    @eval ($op)(x::Number, p::ScaledParameter)            = ($op)(x, p.scaledvalue)
 
     @eval ($op)(p::ScaledParameter, q::UnscaledOrSteadyState) = ($op)(p.scaledvalue, q.value)
     @eval ($op)(p::UnscaledOrSteadyState, q::ScaledParameter) = ($op)(p.value, q.scaledvalue)
@@ -901,22 +901,21 @@ for op in (:(Base.:+),
            :(Base.:/),
            :(Base.:^))
 
-    @eval ($op)(p::UnscaledVectorParameter, q::UnscaledVectorParameter) = ($op)(p.value, q.value)
-    #@eval ($op)(p::UnscaledOrSteadyState, q::UnscaledOrSteadyState)    = ($op)(p.value, q.value)
-    @eval ($op)(p::UnscaledVectorParameter, x::Integer)          = ($op)(p.value, x)
-    #@eval ($op)(p::UnscaledOrSteadyState, x::Integer)           = ($op)(p.value, x)
-    @eval ($op)(p::UnscaledVectorParameter, x::Number)           = ($op)(p.value, x)
-    #@eval ($op)(p::UnscaledOrSteadyState, x::Number)            = ($op)(p.value, x)
+    @eval ($op)(p::UnscaledVectorParameter, q::UnscaledVectorParameter) = ($op)(p.value, q.value) #@eval ($op)(p::UnscaledOrSteadyState, q::UnscaledOrSteadyState) = ($op)(p.value, q.value)
+    @eval ($op)(p::UnscaledVectorParameter, x::Integer)            = ($op)(p.value, x) #@eval ($op)(p::UnscaledOrSteadyState, x::Integer)            = ($op)(p.value, x)
+    @eval ($op)(p::UnscaledVectorParameter, x::Number)            = ($op)(p.value, x) #@eval ($op)(p::UnscaledOrSteadyState, x::Number)            = ($op)(p.value, x)
     #@eval ($op)(x::Number, p::UnscaledOrSteadyState)            = ($op)(x, p.value)
 
     @eval ($op)(p::ScaledVectorParameter, q::ScaledVectorParameter) = ($op)(p.scaledvalue, q.scaledvalue)
-    @eval ($op)(p::ScaledVectorParameter, x::Integer)          = ($op)(p.scaledvalue, x)
-    @eval ($op)(p::ScaledVectorParameter, x::Number)           = ($op)(p.scaledvalue, x)
-    @eval ($op)(x::Number, p::ScaledVectorParameter)           = ($op)(x, p.scaledvalue)
+    @eval ($op)(p::ScaledVectorParameter, x::Integer)            = ($op)(p.scaledvalue, x)
+    @eval ($op)(p::ScaledVectorParameter, x::Number)            = ($op)(p.scaledvalue, x)
+    @eval ($op)(x::Number, p::ScaledVectorParameter)            = ($op)(x, p.scaledvalue)
 
     @eval ($op)(p::ScaledVectorParameter, q::UnscaledOrSteadyState) = ($op)(p.scaledvalue, q.value)
-   #@eval ($op)(p::UnscaledOrSteadyState, q::ScaledVectorParameter) = ($op)(p.value, q.scaledvalue)
+    #@eval ($op)(p::UnscaledOrSteadyState, q::ScaledVectorParameter) = ($op)(p.value, q.scaledvalue)
 end
+
+
 
 
 # Define scalar functional mappings and comparisons
