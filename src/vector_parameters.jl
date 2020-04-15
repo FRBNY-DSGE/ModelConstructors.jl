@@ -16,6 +16,7 @@ as follows:
     -`SteadyStateParameter{T<:Number}`: Concrete type for steady-state parameters.
 """
 abstract type AbstractVectorParameter{V<:Vector, T<:Number} end
+#abstract type AbstractArrayParameter{A<:Array} end
 
 """
 ```
@@ -35,7 +36,14 @@ each others types, we can avoid the issue of having to recast the types of field
 with type `T` to be Duals as well.
 """
 abstract type VectorParameter{V,T,U<:Transform} <: AbstractVectorParameter{V,T} end
+#abstract type ArrayParameter{A,U<:Transform} <: AbstractArrayParameter{A} end
+
+# ParameterVector is a wrapper for a vector
+# that takes any subtype of AbstractParameter, but it is not
+# an "abstract" type since we are not intending
+# to define subtypes of ParameterVector.
 VectorParameterVector{V,T} =  Vector{AbstractVectorParameter{V,T}}
+#ArrayParameterVector{A}   =  Vector{AbstractArrayParameter{A}}
 
 """
 ```
@@ -65,14 +73,14 @@ conditions.
 """
 mutable struct UnscaledVectorParameter{V,T,U} <: VectorParameter{V,T,U}
     key::Symbol
-    value::V{T}                         # parameter value in model space
-    valuebounds::V{Interval{T}}         # bounds of parameter value
+    value::V{T}                       # parameter value in model space
+    valuebounds::V{Interval{T}}       # bounds of parameter value
     transform_parameterization::V{Interval{T}} # parameters for transformation
-    transform::V{U}                     # transform btw. model space & real line for optimization
+    transform::V{U}  # transformation between model space and real line for optimization
     prior::V{NullablePriorMultivariate} # prior distribution
-    fixed::V{Bool}                      # is this parameter fixed at some value?
+    fixed::V{Bool}                             # is this parameter fixed at some value?
     description::String
-    tex_label::String                   # LaTeX label for printing
+    tex_label::String                       # LaTeX label for printing
 end
 
 
@@ -120,9 +128,25 @@ mutable struct ScaledVectorParameter{V,T,U} <: VectorParameter{V,T,U}
     tex_label::String
 end
 
-hasprior(p::VectorParameter) = !isnull(p.prior[1])
+# TypeError: non-boolean (BitArray{1}) used in boolean context
+# gets thrown when we print the value.
 
+function Base.show(io::IO, p::SteadyStateParameterArray{T}) where {T}
+    @printf io "%s\n" typeof(p)
+    @printf io "(:%s)\n%s\n"      p.key p.description
+    @printf io "LaTeX label: %s\n"     p.tex_label
+    @printf io "-----------------------------\n"
+    @printf io "value:        [%+6f,...,%+6f]\n" p.value[1] p.value[end]
+end
+
+hasprior(p::Union{Parameter, ParameterAD, VectorParameter}) = !isnull(p.prior)
+
+NullableOrPriorUnivariate   = Union{NullablePriorUnivariate,   ContinuousUnivariateDistribution}
 NullableOrPriorMultivariate = Union{NullablePriorMultivariate, ContinuousMultivariateDistribution}
+
+# We want to use value field from UnscaledParameters and
+# SteadyStateParameters in computation, so we alias their union here.
+UnscaledOrSteadyState = Union{UnscaledParameter, SteadyStateParameter}
 
 """
 ```
@@ -138,16 +162,16 @@ and value `value`. If `scaling` is given, a `ScaledParameter` object
 is returned.
 """
 function parameter(key::Symbol,
-                   value::V{T},
-                   valuebounds::Vector{Interval{T}} = (value, value),
+                   value::Union{T, V}, #value::Union{S,V},
+                   valuebounds::Interval{T} = (value, value),
                    transform_parameterization::Interval{T} = (value, value),
-                   transform::U        = Untransformed(),
+                   transform::U             = Untransformed(),
                    prior::Union{NullableOrPriorUnivariate,
                                 NullableOrPriorMultivariate} = NullablePriorUnivariate();
-                   fixed::Bool         = true,
-                   scaling::Function   = identity,
+                   fixed::Bool              = true,
+                   scaling::Function        = identity,
                    description::String = "No description available.",
-                   tex_label::String   = "") where {V<:Vector, T<:Float64, U<:Transform}
+                   tex_label::String = "") where {V<:Vector, T <: Float64, U <:Transform}
 
     # If fixed=true, force bounds to match and leave prior as null.  We need to define new
     # variable names here because of lexical scoping.
@@ -160,12 +184,12 @@ function parameter(key::Symbol,
 
     if fixed
         # value[1] because need to deal with case in which value is a vector (but if only Float, [1] just takes the Float
-        transform_parameterization_new = (value[1], value[1])  # value is transformed already
+        transform_parameterization_new = (value[1],value[1])  # value is transformed already
         transform_new = Untransformed()                 # fixed priors should stay untransformed
         U_new = Untransformed
 
         if isa(transform, Untransformed)
-            valuebounds_new = (value[1], value[1])
+            valuebounds_new = (value[1],value[1])
         end
     else
         transform_parameterization_new = transform_parameterization
