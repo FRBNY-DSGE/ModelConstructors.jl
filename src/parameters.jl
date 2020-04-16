@@ -381,7 +381,7 @@ function parameter(key::Symbol,
                    prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
                    fixed::Bool              = true,
                    scaling::Function        = identity,
-                   regimes::Dict{Symbol,Dict{Int64,Any}} = Dict{Symbol,Dict{Int64,Any}}()
+                   regimes::Dict{Symbol,Dict{Int64,Any}} = Dict{Symbol,Dict{Int64,Any}}(),
                    description::String = "No description available.",
                    tex_label::String = "") where {V<:Vector, T <: Float64, U <:Transform} #{V<:Vector, S<:Real, T <: Float64, U <:Transform}
 
@@ -449,7 +449,7 @@ function parameter_ad(key::Symbol,
                       prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
                       fixed::Bool              = true,
                       scaling::Function        = identity,
-                      regimes::Dict{Symbol,Dict{Int64,Any}} = Dict{Symbol,Dict{Int64,Any}}()
+                      regimes::Dict{Symbol,Dict{Int64,Any}} = Dict{Symbol,Dict{Int64,Any}}(),
                       description::String = "No description available.",
                       tex_label::String = "") where {V<:Vector, S<:Real, T <: Float64, U <:Transform}
 
