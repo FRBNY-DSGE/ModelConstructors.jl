@@ -76,6 +76,7 @@ module ModelConstructors
     include("defaults.jl")
     include("statistics.jl")
     include("util.jl")
+    include("regimes.jl")
     include("generic_model.jl")
     include("linear_regression.jl")
 end
