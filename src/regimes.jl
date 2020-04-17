@@ -7,14 +7,14 @@ function set_regime_val!(p::Parameter{S},
     return v
 end
 
-function regime_val(p::Parameter{S}, i::Int64)
+function regime_val(p::Parameter{S}, i::Int64) where S <: Float64
     if !haskey(p.regimes, :value) || !haskey(p.regimes[:value], i)
         @error "get_regime_val(), Input Error: No regime $(i)"
     end
     return p.regimes[:value][i]
 end
 
-function toggle_regime(p::Parameter{S}, i::Int64)
+function toggle_regime(p::Parameter{S}, i::Int64) where S <: Float64
     for field in [:value, :valuebounds, :transform_parameterization,
                   :transform, :prior, :fixed]
 
