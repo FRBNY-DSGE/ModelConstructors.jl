@@ -1,9 +1,13 @@
 function set_regime_val!(p::Parameter{S},
-                         i::Int64, v::S) where S <: Float64
+                         i::Int64, v::S; override_bounds::Bool = false) where S <: Float64
     if !haskey(p.regimes, :value)
         p.regimes[:value] = Dict{Int64,S}()
     end
-    p.regimes[:value][i] = v
+    if p.valuebounds[1] < v < p.valuebounds[2] || override_bounds == true
+        p.regimes[:value][i] = v
+    else
+        throw(ParamBoundsError("New value of $(string(p.key)) ($(v)) is out of bounds ($(p.valuebounds))"))
+    end
     return v
 end
 
