@@ -1005,7 +1005,7 @@ Function optimized for speed.
 function update!(pvec::ParameterVector, values::Vector{T};
                  change_value_type::Bool = false) where T
     # this function is optimised for speed
-    @assert length(values) == length(pvec) "Length of input vector (=$(length(values))) must match length of parameter vector (=$(length(pvec)))"
+ #   @assert length(values) == length(pvec) "Length of input vector (=$(length(values))) must match length of parameter vector (=$(length(pvec)))"
     if change_value_type
         tmp = if typeof(pvec[1]) <: ParameterAD
             (x,y) -> parameter_ad(x, y; change_value_type = change_value_type)
@@ -1015,9 +1015,19 @@ function update!(pvec::ParameterVector, values::Vector{T};
         map!(tmp, pvec, pvec, values)
     else
         if typeof(pvec[1]) <: ParameterAD
-            map!(parameter_ad, pvec, pvec, values)
+            map!(parameter_ad, pvec, pvec, values[1:length(pvec)])
         else
-            map!(parameter, pvec, pvec, values)
+            map!(parameter, pvec, pvec, values[1:length(pvec)])
+        end
+        if length(values) > length(pvec)
+            i = 0
+            for para in pvec
+                if !isempty(para.regimes)
+                    i = i+1
+                    set_regime_val!(para, 1, para.value)
+                    set_regime_val!(para, 2, values[length(pvec) + 1])
+                end
+            end
         end
     end
 end
@@ -1160,16 +1170,69 @@ end
 
 """
 ```
+Distributions.rand(p::Vector{AbstractParameter{Float64}})
+```
+
+Generate a draw from the prior of each parameter in `p`.
+"""
+function rand_aug(p::Vector{AbstractParameter{Float64}})
+    draw = zeros(length(p))
+    for (i, para) in enumerate(p)
+        draw[i] = if para.fixed
+            para.value
+        else
+            # Resample until all prior draws are within the value bounds
+            prio = rand(para.prior.value)
+            while !(para.valuebounds[1] < prio < para.valuebounds[2])
+                prio = rand(para.prior.value)
+            end
+            prio
+        end
+    end
+    draw_aug = Vector{Float64}(undef, 0)
+    for para in p
+#        @show para.key
+        if !isempty(para.regimes)
+            for (ind, val) in para.regimes[:value]
+                if ind!=1
+#                    @show ind
+                    one_draw = if para.fixed
+                        para.value
+                    else
+                        # Resample until all prior draws are within the value bounds
+                        prio = rand(para.prior.value)
+                        while !(para.valuebounds[1] < prio < para.valuebounds[2])
+                            prio = rand(para.prior.value)
+                        end
+                        prio
+                    end
+#                    @show one_draw
+                    push!(draw_aug, one_draw)
+#                    @show draw_aug
+                end
+            end
+        end
+    end
+    return [draw; draw_aug]
+end
+
+
+"""
+```
 Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int)
 ```
 
 Generate `n` draws from the priors of each parameter in `p`.This returns a matrix of size
 `(length(p),n)`, where each column is a sample.
 """
-function Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int)
-    priorsim = zeros(length(p), n)
+function Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int; aug::Bool = false)
+    priorsim = zeros(length(rand_aug(p)), n) #length(p), n)
     for i in 1:n
-        priorsim[:, i] = rand(p)
+        if aug
+            priorsim[:, i] = rand_aug(p)
+        else
+            priorsim[:, i] = rand(p)
+        end
     end
     return priorsim
 end
