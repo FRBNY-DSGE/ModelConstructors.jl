@@ -1025,7 +1025,7 @@ function update!(pvec::ParameterVector, values::Vector{T};
                 if !isempty(para.regimes)
                     i = i+1
                     set_regime_val!(para, 1, para.value)
-                    set_regime_val!(para, 2, values[length(pvec) + 1])
+                    set_regime_val!(para, 2, values[length(pvec) + i])
                 end
             end
         end
