@@ -1019,13 +1019,21 @@ function update!(pvec::ParameterVector, values::Vector{T};
         else
             map!(parameter, pvec, pvec, values[1:length(pvec)])
         end
+        # If length of values (Floats) is longer than of parameters (Parameters), put the extra stuff into regimes fields
+        # in order of
         if length(values) > length(pvec)
             i = 0
             for para in pvec
                 if !isempty(para.regimes)
-                    i = i+1
-                    set_regime_val!(para, 1, para.value)
-                    set_regime_val!(para, 2, values[length(pvec) + i])
+                    for key in keys(para.regimes[:value])
+                        if key == 1
+                            set_regime_val!(para, key, para.value)
+                        else
+                            i = i+1
+                            set_regime_val!(para, key, values[length(pvec) + i])
+                        end
+
+                    end
                 end
             end
         end
@@ -1111,7 +1119,11 @@ equal length of `pvec`.
 
 We define the non-mutating version like this because we need the type stability of map!
 """
-update(pvec::ParameterVector, values::Vector{S}) where S = update!(copy(pvec), values)
+function update(pvec::ParameterVector, values::Vector{S}) where S
+    tmp = copy(pvec)
+    update!(tmp, values)
+    return tmp
+end
 
 Distributions.pdf(p::AbstractParameter) = exp(logpdf(p))
 # we want the unscaled value for ScaledParameters
@@ -1189,13 +1201,10 @@ function rand_aug(p::Vector{AbstractParameter{Float64}})
             prio
         end
     end
-    draw_aug = Vector{Float64}(undef, 0)
     for para in p
-#        @show para.key
         if !isempty(para.regimes)
-            for (ind, val) in para.regimes[:value]
-                if ind!=1
-#                    @show ind
+            for regime in keys(para.regimes[:value])
+                if regime != 1
                     one_draw = if para.fixed
                         para.value
                     else
@@ -1206,14 +1215,12 @@ function rand_aug(p::Vector{AbstractParameter{Float64}})
                         end
                         prio
                     end
-#                    @show one_draw
-                    push!(draw_aug, one_draw)
-#                    @show draw_aug
+                    push!(draw, one_draw)
                 end
             end
         end
     end
-    return [draw; draw_aug]
+    return draw
 end
 
 
@@ -1226,7 +1233,7 @@ Generate `n` draws from the priors of each parameter in `p`.This returns a matri
 `(length(p),n)`, where each column is a sample.
 """
 function Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int; aug::Bool = false)
-    priorsim = zeros(length(rand_aug(p)), n) #length(p), n)
+    priorsim = aug ? zeros(length(rand_aug(p)), n) : zeros(length(p), n)
     for i in 1:n
         if aug
             priorsim[:, i] = rand_aug(p)
