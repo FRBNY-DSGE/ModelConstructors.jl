@@ -1022,17 +1022,16 @@ function update!(pvec::ParameterVector, values::Vector{T};
         # If length of values (Floats) is longer than of parameters (Parameters), put the extra stuff into regimes fields
         # in order of
         if length(values) > length(pvec)
-            i = 0
+            i = length(pvec)
             for para in pvec
                 if !isempty(para.regimes)
                     for key in keys(para.regimes[:value])
                         if key == 1
                             set_regime_val!(para, key, para.value)
                         else
-                            i = i+1
-                            set_regime_val!(para, key, values[length(pvec) + i])
+                            i += 1
+                            set_regime_val!(para, key, values[i])
                         end
-
                     end
                 end
             end
