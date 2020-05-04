@@ -1,7 +1,7 @@
 function set_regime_val!(p::Parameter{S},
                          i::Int64, v::S; override_bounds::Bool = false) where S <: Float64
     if !haskey(p.regimes, :value)
-        p.regimes[:value] = Dict{Int64,S}()
+        p.regimes[:value] = OrderedDict{Int64,S}()
     end
     if p.valuebounds[1] < v < p.valuebounds[2] || override_bounds == true
         p.regimes[:value][i] = v
@@ -35,8 +35,6 @@ function toggle_regime!(p::Parameter{S}, i::Int64) where S <: Float64
             elseif field == :fixed
                 p.transform = p.regimes[:transform][i]
             end
-        else
-            #@error "get_regime_val(), Input Error: No regime $(i)"
         end
     end
 end

@@ -108,7 +108,7 @@ mutable struct UnscaledParameterAD{S,T,U} <: ParameterAD{S,T,U} # New parameter 
     transform::U                            # transformation between model space and real line for optimization
     prior::NullablePriorUnivariate                    # prior distribution
     fixed::Bool                             # is this parameter fixed at some value?
-    regimes::Dict{Symbol,Dict{Int64,Any}}
+    regimes::Dict{Symbol,OrderedDict{Int64,Any}}
     description::String
     tex_label::String               # LaTeX label for printing
 end
@@ -121,7 +121,7 @@ mutable struct UnscaledParameter{T,U} <: Parameter{T,U} # Old parameter type
     transform::U                            # transformation between model space and real line for optimization
     prior::NullablePriorUnivariate                    # prior distribution
     fixed::Bool                             # is this parameter fixed at some value?
-    regimes::Dict{Symbol,Dict{Int64,Any}}
+    regimes::Dict{Symbol,OrderedDict{Int64,Any}}
     description::String
     tex_label::String               # LaTeX label for printing
 end
@@ -134,7 +134,7 @@ mutable struct UnscaledVectorParameter{V,T,U} <: VectorParameter{V,T,U}
     transform::U                            # transformation between model space and real line for optimization
     prior::NullablePriorMultivariate                   # prior distribution
     fixed::Bool                             # is this parameter fixed at some value?
-    regimes::Dict{Symbol,Dict{Int64,Any}}
+    regimes::Dict{Symbol,OrderedDict{Int64,Any}}
     description::String
     tex_label::String               # LaTeX label for printing
 end
@@ -180,7 +180,7 @@ mutable struct ScaledParameterAD{S,T,U} <: ParameterAD{S,T,U}
     prior::NullablePriorUnivariate
     fixed::Bool
     scaling::Function
-    regimes::Dict{Symbol,Dict{Int64,Any}}
+    regimes::Dict{Symbol,OrderedDict{Int64,Any}}
     description::String
     tex_label::String
 end
@@ -195,7 +195,7 @@ mutable struct ScaledParameter{T,U} <: Parameter{T,U}
     prior::NullablePriorUnivariate
     fixed::Bool
     scaling::Function
-    regimes::Dict{Symbol,Dict{Int64,Any}}
+    regimes::Dict{Symbol,OrderedDict{Int64,Any}}
     description::String
     tex_label::String
 end
@@ -210,7 +210,7 @@ mutable struct ScaledVectorParameter{V,T,U} <: VectorParameter{V,T,U}
     prior::NullablePriorMultivariate
     fixed::Bool
     scaling::Function
-    regimes::Dict{Symbol,Dict{Int64,Any}}
+    regimes::Dict{Symbol,OrderedDict{Int64,Any}}
     description::String
     tex_label::String
 end
@@ -381,7 +381,7 @@ function parameter(key::Symbol,
                    prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
                    fixed::Bool              = true,
                    scaling::Function        = identity,
-                   regimes::Dict{Symbol,Dict{Int64,Any}} = Dict{Symbol,Dict{Int64,Any}}(),
+                   regimes::Dict{Symbol,OrderedDict{Int64,Any}} = Dict{Symbol,OrderedDict{Int64,Any}}(),
                    description::String = "No description available.",
                    tex_label::String = "") where {V<:Vector, T <: Float64, U <:Transform} #{V<:Vector, S<:Real, T <: Float64, U <:Transform}
 
@@ -449,7 +449,7 @@ function parameter_ad(key::Symbol,
                       prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
                       fixed::Bool              = true,
                       scaling::Function        = identity,
-                      regimes::Dict{Symbol,Dict{Int64,Any}} = Dict{Symbol,Dict{Int64,Any}}(),
+                      regimes::Dict{Symbol,OrderedDict{Int64,Any}} = Dict{Symbol,OrderedDict{Int64,Any}}(),
                       description::String = "No description available.",
                       tex_label::String = "") where {V<:Vector, S<:Real, T <: Float64, U <:Transform}
 
