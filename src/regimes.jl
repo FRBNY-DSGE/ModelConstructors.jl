@@ -3,7 +3,7 @@ function set_regime_val!(p::Parameter{S},
     if !haskey(p.regimes, :value)
         p.regimes[:value] = OrderedDict{Int64,S}()
     end
-    if p.valuebounds[1] < v < p.valuebounds[2] || override_bounds == true
+    if p.valuebounds[1] <= v <= p.valuebounds[2] || override_bounds
         p.regimes[:value][i] = v
     else
         throw(ParamBoundsError("New value of $(string(p.key)) ($(v)) is out of bounds ($(p.valuebounds))"))
