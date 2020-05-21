@@ -35,6 +35,8 @@ function toggle_regime!(p::Parameter{S}, i::Int64) where S <: Float64
             elseif field == :fixed
                 p.transform = p.regimes[:transform][i]
             end
+        elseif !haskey(p.regimes[field], i)
+            error("Regime $i for field $field not found")
         end
     end
 end
