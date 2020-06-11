@@ -1,7 +1,8 @@
-
 # Data
 # save/input_data/
 
 # docs folder
 docs/build
 docs/examples/factor_model/make_data
+
+Manifest.toml
