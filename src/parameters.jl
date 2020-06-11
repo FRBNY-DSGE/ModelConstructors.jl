@@ -96,6 +96,8 @@ conditions.
   model space and real line.
 - `prior::NullablePrior`: Prior distribution for parameter value.
 - `fixed::Bool`: Indicates whether the parameter's value is fixed rather than estimated.
+- `regimes::Dict{Symbol,OrderedDict{Int64,Any}}`: Dictionary for holding information
+    when there are multiple regimes for parameter values
 - `description::String`:  A short description of the parameter's economic
   significance.
 - `tex_label::String`: String for printing the parameter name to LaTeX.
@@ -166,6 +168,8 @@ conditions.
 - `fixed::Bool`: Indicates whether the parameter's value is fixed rather than estimated.
 - `scaling::Function`: Function used to scale parameter value for use in equilibrium
   conditions.
+- `regimes::Dict{Symbol,OrderedDict{Int64,Any}}`: Dictionary for holding information
+    when there are multiple regimes for parameter values
 - `description::String`: A short description of the parameter's economic
   significance.
 - `tex_label::String`: String for printing parameter name to LaTeX.
