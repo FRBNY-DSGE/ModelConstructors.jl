@@ -1,3 +1,13 @@
+"""
+```
+ set_regime_val!(p::Parameter{S},
+    i::Int64, v::S; override_bounds::Bool = false) where S <: Float64
+```
+
+sets the value in regime `i` of `p` to be `v`. By default, we enforce
+the bounds that are currently in `p`, but the bounds can be ignoerd by
+setting `override_bounds = true`.
+"""
 function set_regime_val!(p::Parameter{S},
                          i::Int64, v::S; override_bounds::Bool = false) where S <: Float64
     if !haskey(p.regimes, :value)
@@ -11,6 +21,13 @@ function set_regime_val!(p::Parameter{S},
     return v
 end
 
+"""
+```
+function regime_val(p::Parameter{S}, i::Int64) where S <: Float64
+```
+
+returns the value of `p` in regime `i`.
+"""
 function regime_val(p::Parameter{S}, i::Int64) where S <: Float64
     if !haskey(p.regimes, :value) || !haskey(p.regimes[:value], i)
         @error "get_regime_val(), Input Error: No regime $(i)"
@@ -18,6 +35,22 @@ function regime_val(p::Parameter{S}, i::Int64) where S <: Float64
     return p.regimes[:value][i]
 end
 
+"""
+```
+function toggle_regime!(p::Parameter{S}, i::Int64) where S <: Float64
+```
+
+changes the fields of `p` to regime `i`.
+
+For example, if
+
+```
+p.regimes[:value] = OrderedDict{Int, Any}(1 => 1, 2 => 3)
+```
+
+then `toggle_regime!(p, 1)` will cause `p.value = 1` and `toggle_regime!(p, 2)`
+will cause `p.value = 3`.
+"""
 function toggle_regime!(p::Parameter{S}, i::Int64) where S <: Float64
     for field in [:value, :valuebounds, :transform_parameterization,
                   :transform, :prior, :fixed]
