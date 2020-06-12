@@ -96,6 +96,8 @@ conditions.
   model space and real line.
 - `prior::NullablePrior`: Prior distribution for parameter value.
 - `fixed::Bool`: Indicates whether the parameter's value is fixed rather than estimated.
+- `regimes::Dict{Symbol,OrderedDict{Int64,Any}}`: Dictionary for holding information
+    when there are multiple regimes for parameter values
 - `description::String`:  A short description of the parameter's economic
   significance.
 - `tex_label::String`: String for printing the parameter name to LaTeX.
@@ -108,6 +110,7 @@ mutable struct UnscaledParameterAD{S,T,U} <: ParameterAD{S,T,U} # New parameter 
     transform::U                            # transformation between model space and real line for optimization
     prior::NullablePriorUnivariate                    # prior distribution
     fixed::Bool                             # is this parameter fixed at some value?
+    regimes::Dict{Symbol,OrderedDict{Int64,Any}}
     description::String
     tex_label::String               # LaTeX label for printing
 end
@@ -120,6 +123,7 @@ mutable struct UnscaledParameter{T,U} <: Parameter{T,U} # Old parameter type
     transform::U                            # transformation between model space and real line for optimization
     prior::NullablePriorUnivariate                    # prior distribution
     fixed::Bool                             # is this parameter fixed at some value?
+    regimes::Dict{Symbol,OrderedDict{Int64,Any}}
     description::String
     tex_label::String               # LaTeX label for printing
 end
@@ -132,6 +136,7 @@ mutable struct UnscaledVectorParameter{V,T,U} <: VectorParameter{V,T,U}
     transform::U                            # transformation between model space and real line for optimization
     prior::NullablePriorMultivariate                   # prior distribution
     fixed::Bool                             # is this parameter fixed at some value?
+    regimes::Dict{Symbol,OrderedDict{Int64,Any}}
     description::String
     tex_label::String               # LaTeX label for printing
 end
@@ -163,6 +168,8 @@ conditions.
 - `fixed::Bool`: Indicates whether the parameter's value is fixed rather than estimated.
 - `scaling::Function`: Function used to scale parameter value for use in equilibrium
   conditions.
+- `regimes::Dict{Symbol,OrderedDict{Int64,Any}}`: Dictionary for holding information
+    when there are multiple regimes for parameter values
 - `description::String`: A short description of the parameter's economic
   significance.
 - `tex_label::String`: String for printing parameter name to LaTeX.
@@ -177,6 +184,7 @@ mutable struct ScaledParameterAD{S,T,U} <: ParameterAD{S,T,U}
     prior::NullablePriorUnivariate
     fixed::Bool
     scaling::Function
+    regimes::Dict{Symbol,OrderedDict{Int64,Any}}
     description::String
     tex_label::String
 end
@@ -191,6 +199,7 @@ mutable struct ScaledParameter{T,U} <: Parameter{T,U}
     prior::NullablePriorUnivariate
     fixed::Bool
     scaling::Function
+    regimes::Dict{Symbol,OrderedDict{Int64,Any}}
     description::String
     tex_label::String
 end
@@ -205,6 +214,7 @@ mutable struct ScaledVectorParameter{V,T,U} <: VectorParameter{V,T,U}
     prior::NullablePriorMultivariate
     fixed::Bool
     scaling::Function
+    regimes::Dict{Symbol,OrderedDict{Int64,Any}}
     description::String
     tex_label::String
 end
@@ -375,6 +385,7 @@ function parameter(key::Symbol,
                    prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
                    fixed::Bool              = true,
                    scaling::Function        = identity,
+                   regimes::Dict{Symbol,OrderedDict{Int64,Any}} = Dict{Symbol,OrderedDict{Int64,Any}}(),
                    description::String = "No description available.",
                    tex_label::String = "") where {V<:Vector, T <: Float64, U <:Transform} #{V<:Vector, S<:Real, T <: Float64, U <:Transform}
 
@@ -413,11 +424,11 @@ function parameter(key::Symbol,
         if typeof(value) <: Number #Real
             return UnscaledParameter{T,U_new}(key, value, valuebounds_new,
                                               transform_parameterization_new, transform_new,
-                                              prior_new, fixed, description, tex_label) #S
+                                              prior_new, fixed, regimes, description, tex_label) #S
         elseif typeof(value) <: Vector
             return UnscaledVectorParameter{V,T,U_new}(key, value, valuebounds_new,
                                               transform_parameterization_new, transform_new,
-                                              prior_new, fixed, description, tex_label)
+                                              prior_new, fixed, regimes, description, tex_label)
         else
             @error "Type of value not yet supported"
         end
@@ -425,11 +436,11 @@ function parameter(key::Symbol,
         if typeof(value) <: Number #Real
             return ScaledParameter{T,U_new}(key, value, scaling(value), valuebounds_new,
                                             transform_parameterization_new, transform_new,
-                                            prior_new, fixed, scaling, description, tex_label)
+                                            prior_new, fixed, scaling, regimes, description, tex_label)
         elseif typeof(value) <: Vector
             return ScaledVectorParameter{V,T,U_new}(key, value, scaling(value), valuebounds_new,
                                             transform_parameterization_new, transform_new,
-                                            prior_new, fixed, scaling, description, tex_label)
+                                            prior_new, fixed, scaling, regimes, description, tex_label)
         end
     end
 end
@@ -442,6 +453,7 @@ function parameter_ad(key::Symbol,
                       prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
                       fixed::Bool              = true,
                       scaling::Function        = identity,
+                      regimes::Dict{Symbol,OrderedDict{Int64,Any}} = Dict{Symbol,OrderedDict{Int64,Any}}(),
                       description::String = "No description available.",
                       tex_label::String = "") where {V<:Vector, S<:Real, T <: Float64, U <:Transform}
 
@@ -480,11 +492,11 @@ function parameter_ad(key::Symbol,
         if typeof(value) <: Real
             return UnscaledParameterAD{S,T,U_new}(key, value, valuebounds_new,
                                               transform_parameterization_new, transform_new,
-                                              prior_new, fixed, description, tex_label) #S
+                                              prior_new, fixed, regimes, description, tex_label) #S
         elseif typeof(value) <: Vector
             return UnscaledVectorParameter{V,T,U_new}(key, value, valuebounds_new,
                                               transform_parameterization_new, transform_new,
-                                              prior_new, fixed, description, tex_label)
+                                              prior_new, fixed, regimes, description, tex_label)
         else
             @error "Type of value not yet supported"
         end
@@ -492,11 +504,11 @@ function parameter_ad(key::Symbol,
         if typeof(value) <: Real
             return ScaledParameterAD{S,T,U_new}(key, value, scaling(value), valuebounds_new,
                                             transform_parameterization_new, transform_new,
-                                            prior_new, fixed, scaling, description, tex_label)
+                                            prior_new, fixed, scaling, regimes, description, tex_label)
         elseif typeof(value) <: Vector
             return ScaledVectorParameter{V,T,U_new}(key, value, scaling(value), valuebounds_new,
                                             transform_parameterization_new, transform_new,
-                                            prior_new, fixed, scaling, description, tex_label)
+                                            prior_new, fixed, scaling, regimes, description, tex_label)
         end
     end
 end
@@ -541,7 +553,7 @@ function parameter(p::UnscaledParameter{T,U}, newvalue::T) where {T <: Number, U
         throw(ParamBoundsError("New value of $(string(p.key)) ($(newvalue)) is out of bounds ($(p.valuebounds))"))
     end
     UnscaledParameter{T,U}(p.key, newvalue, p.valuebounds, p.transform_parameterization,
-                           p.transform, p.prior, p.fixed, p.description, p.tex_label)
+                           p.transform, p.prior, p.fixed, p.regimes, p.description, p.tex_label)
 end
 
 function parameter_ad(p::UnscaledParameterAD{S,T,U}, newvalue::Snew;
@@ -556,10 +568,10 @@ function parameter_ad(p::UnscaledParameterAD{S,T,U}, newvalue::Snew;
     end
     if change_value_type
         UnscaledParameterAD{Snew,T,U}(p.key, newvalue, p.valuebounds, p.transform_parameterization,
-                                 p.transform, p.prior, p.fixed, p.description, p.tex_label)
+                                 p.transform, p.prior, p.fixed, p.regimes, p.description, p.tex_label)
     else
         UnscaledParameterAD{S,T,U}(p.key, newvalue, p.valuebounds, p.transform_parameterization,
-                                 p.transform, p.prior, p.fixed, p.description, p.tex_label)
+                                 p.transform, p.prior, p.fixed, p.regimes, p.description, p.tex_label)
     end
 end
 
@@ -571,7 +583,7 @@ function parameter(p::UnscaledVectorParameter{V,T,U}, newvalue::V) where {V <: V
         throw(ParamBoundsError("New value of $(string(p.key)) ($(newvalue)) is out of bounds ($(p.valuebounds))"))
     end
     UnscaledVectorParameter{V,T,U}(p.key, newvalue, p.valuebounds, p.transform_parameterization,
-                           p.transform, p.prior, p.fixed, p.description, p.tex_label)
+                           p.transform, p.prior, p.fixed, p.regimes, p.description, p.tex_label)
 end
 
 
@@ -591,7 +603,7 @@ function parameter(p::ScaledParameter{T,U}, newvalue::T) where {T <: Number, U <
     end
     ScaledParameter{T,U}(p.key, newvalue, p.scaling(newvalue), p.valuebounds,
                          p.transform_parameterization, p.transform, p.prior, p.fixed,
-                         p.scaling, p.description, p.tex_label)
+                         p.scaling, p.regimes, p.description, p.tex_label)
 end
 
 function parameter_ad(p::ScaledParameterAD{S,T,U}, newvalue::Snew;
@@ -607,11 +619,11 @@ function parameter_ad(p::ScaledParameterAD{S,T,U}, newvalue::Snew;
     if change_value_type
         ScaledParameterAD{Snew,T,U}(p.key, newvalue, p.scaling(newvalue), p.valuebounds,
                                p.transform_parameterization, p.transform, p.prior, p.fixed,
-                               p.scaling, p.description, p.tex_label)
+                               p.scaling, p.regimes, p.description, p.tex_label)
     else
         ScaledParameterAD{S,T,U}(p.key, newvalue, p.scaling(newvalue), p.valuebounds,
                                p.transform_parameterization, p.transform, p.prior, p.fixed,
-                               p.scaling, p.description, p.tex_label)
+                               p.scaling, p.regimes, p.description, p.tex_label)
     end
 end
 
@@ -624,7 +636,7 @@ function parameter(p::ScaledVectorParameter{V,T,U}, newvalue::V) where {V <: Vec
     end
     ScaledVectorParameter{V,T,U}(p.key, newvalue, p.scaling.(newvalue), p.valuebounds,
                          p.transform_parameterization, p.transform, p.prior, p.fixed,
-                         p.scaling, p.description, p.tex_label)
+                         p.scaling, p.regimes, p.description, p.tex_label)
 end
 
 
@@ -997,7 +1009,7 @@ Function optimized for speed.
 function update!(pvec::ParameterVector, values::Vector{T};
                  change_value_type::Bool = false) where T
     # this function is optimised for speed
-    @assert length(values) == length(pvec) "Length of input vector (=$(length(values))) must match length of parameter vector (=$(length(pvec)))"
+ #   @assert length(values) == length(pvec) "Length of input vector (=$(length(values))) must match length of parameter vector (=$(length(pvec)))"
     if change_value_type
         tmp = if typeof(pvec[1]) <: ParameterAD
             (x,y) -> parameter_ad(x, y; change_value_type = change_value_type)
@@ -1007,9 +1019,26 @@ function update!(pvec::ParameterVector, values::Vector{T};
         map!(tmp, pvec, pvec, values)
     else
         if typeof(pvec[1]) <: ParameterAD
-            map!(parameter_ad, pvec, pvec, values)
+            map!(parameter_ad, pvec, pvec, values[1:length(pvec)])
         else
-            map!(parameter, pvec, pvec, values)
+            map!(parameter, pvec, pvec, values[1:length(pvec)])
+        end
+        # If length of values (Floats) is longer than of parameters (Parameters), put the extra stuff into regimes fields
+        # in order of
+        if length(values) > length(pvec)
+            i = length(pvec)
+            for para in pvec
+                if !isempty(para.regimes)
+                    for key in keys(para.regimes[:value])
+                        if key == 1
+                            set_regime_val!(para, key, para.value)
+                        else
+                            i += 1
+                            set_regime_val!(para, key, values[i])
+                        end
+                    end
+                end
+            end
         end
     end
 end
@@ -1093,7 +1122,11 @@ equal length of `pvec`.
 
 We define the non-mutating version like this because we need the type stability of map!
 """
-update(pvec::ParameterVector, values::Vector{S}) where S = update!(copy(pvec), values)
+function update(pvec::ParameterVector, values::Vector{S}) where S
+    tmp = copy(pvec)
+    update!(tmp, values)
+    return tmp
+end
 
 Distributions.pdf(p::AbstractParameter) = exp(logpdf(p))
 # we want the unscaled value for ScaledParameters
@@ -1152,16 +1185,64 @@ end
 
 """
 ```
+Distributions.rand(p::Vector{AbstractParameter{Float64}})
+```
+
+Generate a draw from the prior of each parameter in `p`.
+"""
+function rand_aug(p::Vector{AbstractParameter{Float64}})
+    draw = zeros(length(p))
+    for (i, para) in enumerate(p)
+        draw[i] = if para.fixed
+            para.value
+        else
+            # Resample until all prior draws are within the value bounds
+            prio = rand(para.prior.value)
+            while !(para.valuebounds[1] < prio < para.valuebounds[2])
+                prio = rand(para.prior.value)
+            end
+            prio
+        end
+    end
+    for para in p
+        if !isempty(para.regimes)
+            for regime in keys(para.regimes[:value])
+                if regime != 1
+                    one_draw = if para.fixed
+                        para.value
+                    else
+                        # Resample until all prior draws are within the value bounds
+                        prio = rand(para.prior.value)
+                        while !(para.valuebounds[1] < prio < para.valuebounds[2])
+                            prio = rand(para.prior.value)
+                        end
+                        prio
+                    end
+                    push!(draw, one_draw)
+                end
+            end
+        end
+    end
+    return draw
+end
+
+
+"""
+```
 Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int)
 ```
 
 Generate `n` draws from the priors of each parameter in `p`.This returns a matrix of size
 `(length(p),n)`, where each column is a sample.
 """
-function Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int)
-    priorsim = zeros(length(p), n)
+function Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int; aug::Bool = false)
+    priorsim = aug ? zeros(length(rand_aug(p)), n) : zeros(length(p), n)
     for i in 1:n
-        priorsim[:, i] = rand(p)
+        if aug
+            priorsim[:, i] = rand_aug(p)
+        else
+            priorsim[:, i] = rand(p)
+        end
     end
     return priorsim
 end

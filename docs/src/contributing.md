@@ -7,6 +7,7 @@ As these steps are under development, we would welcome improvements to
 the existing code from the community. Some examples could be:
 - Performance improvements
 - Features of certain models that our code cannot implement
+  - Expanding the regime switching functionality of `Parameter` types.
 - Other general improvements
   - Adding documentation/test coverage
   - Adding existing notable models into the docs/examples directory.

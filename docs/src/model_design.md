@@ -11,7 +11,7 @@ for all I/O operations.
 The most minimal model only needs to have parameters, but a generic model may
 have one or more of the following objects:
 
-- **Parameters**: Have values, bounds, fixed-or-not status, and priors. An
+- **Parameters**: Have values, bounds, fixed-or-not status, priors, and regime switching. An
   instance of the `AbstractParameter` type houses all information about a given
   parameter in a single data structure. See
   [The `AbstractParameter` Type](@ref).

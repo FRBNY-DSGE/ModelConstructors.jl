@@ -45,7 +45,20 @@ for each parameter. In some models, steady state values might be relevant parame
 They are typically functions of other parameters, so they do not need
 to be estimated directly.
 
-These various requirements are nicely addressed using a parameterized type
+While parameters are "time-invariant", we do allow regime switching.
+As an example, suppose that we have a linear regression with data
+from time periods $t = 1,\dots, T$, where $T > 4$, and in $t = 3$,
+the intercept of the regression is assumed to change values because of
+a structural break in the time series. We can
+model the intercept as a parameter with regime-switching. The parameter
+has one value in periods $t = 1, 2$ and a different value in periods
+$t = 3,\dots, T$. Currently, only regime-switching in the values
+of the parameter has been tested, but we have implemented
+regime switching in all the features. For example, you may
+want a different prior in each regime. See [Regime-Switching Interface](@ref) for
+documentation on the interface for regime-switching parameters.
+
+The various requirements on parameters are nicely addressed using a parameterized type
 hierarchy.
 
 - `AbstractParameter{T<:Number}`: The common abstract supertype for all
@@ -165,7 +178,6 @@ exactly the same as that of an existing entry in
 all routines. A potentially safer, though clunkier, option is to use the [`update!`](@ref) method.
 
 
-
 ## Type Interfaces
 
 ### `Parameter` Interface
@@ -173,6 +185,34 @@ all routines. A potentially safer, though clunkier, option is to use the [`updat
 ```@autodocs
 Modules = [ModelConstructors]
 Pages = ["parameters.jl"]
+Order = [:function]
+```
+
+### Regime-Switching Interface
+To implement regime-switching, we add a field to `Parameter` types
+called `regimes::Dict{Symbol, OrderedDict{Int, Any}}`. The keys
+of the top level dictionary are the names of the other fields
+in a `Parameter` type, e.g. `:value`. Each key then points to
+an `OrderedDict`, whose keys are the numbers of different regimes
+and values are the corresponding values for each regime.
+
+The field `regimes` functions as a "storage" of information.
+When a `Parameter` type interacts with another object in Julia,
+e.g. `p + 1.`, where `p` is a `Parameter`, what actually happens is
+`p.value + 1.`. Only the current fields of `p` will be used
+when interacting with other objects. To use a different value
+(or different fields) from another regime, the user needs to
+tell the parameter to switch regimes the `toggle_regime!` function (see below).
+
+By default, the `regimes` field is empty (see the documentation
+of the `parameter` function in [`Parameter` Interface](@ref)).
+To add values, either pass in the dictionary as a keyword
+to `parameter` or use `set_regime_val!`. Note that the latter
+function is not exported.
+
+```@autodocs
+Modules = [ModelConstructors]
+Pages = ["regimes.jl"]
 Order = [:function]
 ```
 
