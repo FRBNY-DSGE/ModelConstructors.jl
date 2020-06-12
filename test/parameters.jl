@@ -77,7 +77,7 @@ end
 
 # vector of new values must be the same length
 @testset "Ensure update! enforces the same length of the parameter vector being updated" begin
-    #@test_throws AssertionError ModelConstructors.update!(pvec, ones(length(pvec)-1))
+    @test_throws BoundsError ModelConstructors.update!(pvec, ones(length(pvec)-1))
 end
 
 @testset "Ensure parameters being updated are of the same type." begin
