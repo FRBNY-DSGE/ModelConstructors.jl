@@ -1,10 +1,12 @@
-m = AnSchorfheide()
-
-# settings
+m = GenericModel()
+settings = Dict{Symbol, Setting}()
 # settings - boolean, string, and number. adding to model. overwriting. filestrings. testing/not testing.
-n_mh_blocks = Setting(:n_mh_blocks, 22) # short constructor
-reoptimize = Setting(:reoptimize, false)
-vint = Setting(:data_vintage, "REF", true, "vint", "Date of data") # full constructor
+m <= Setting(:n_mh_blocks, 22) # short constructor
+n_mh_blocks = m.settings[:n_mh_blocks]
+m <= Setting(:reoptimize, false)
+reoptimize = m.settings[:reoptimize]
+m <= Setting(:data_vintage, "REF", true, "vint", "Date of data") # full constructor
+vint = m.settings[:data_vintage]
 
 @testset "Check settings corresponding to parameters" begin
     @test promote_rule(Setting{Float64}, Float16) == Float64
@@ -15,13 +17,14 @@ vint = Setting(:data_vintage, "REF", true, "vint", "Date of data") # full constr
 
     @test get_setting(m, :n_mh_blocks) == m.settings[:n_mh_blocks].value
     m.testing = true
+    m <= m.settings[:n_mh_blocks]
     @test get_setting(m, :n_mh_blocks) == m.test_settings[:n_mh_blocks].value
     @test ModelConstructors.filestring(m) == "_test"
 
     m.testing = false
     m <= Setting(:n_mh_blocks, 5, true, "mhbk", "Number of blocks for Metropolis-Hastings")
     @test m.settings[:n_mh_blocks].value == 5
-    @test occursin(r"^\s*_mhbk=5_vint=(\d{6})", ModelConstructors.filestring(m))
+    @test occursin(r"^\s*_mhbk=5_vint=REF", ModelConstructors.filestring(m))
     ModelConstructors.filestring(m, "key=val")
     ModelConstructors.filestring(m, ["key=val", "foo=bar"])
     m.testing = true

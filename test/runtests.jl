@@ -1,6 +1,6 @@
 using Test
 using ModelConstructors
-using Distributions, DSGE, InteractiveUtils
+using Distributions, InteractiveUtils
 using Nullables, Printf, Random
 
 my_tests = [

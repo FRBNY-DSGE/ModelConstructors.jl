@@ -1,4 +1,4 @@
-m = AnSchorfheide()
+m = GenericModel()
 
 # model paths. all this should work without errors
 m.testing = true
