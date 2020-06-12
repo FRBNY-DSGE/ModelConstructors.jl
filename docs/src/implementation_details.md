@@ -210,6 +210,10 @@ To add values, either pass in the dictionary as a keyword
 to `parameter` or use `set_regime_val!`. Note that the latter
 function is not exported.
 
+*Note that regimes must be sorted in order* because we
+store the regimes as an `OrderedDict`, and `OrderedDict`
+objects are sorted by insertion order.
+
 ```@autodocs
 Modules = [ModelConstructors]
 Pages = ["regimes.jl"]
