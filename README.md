@@ -15,7 +15,7 @@ pkg> add ModelConstructors
 ```
 
 ## Versioning
-`ModelConstructors.jl` is currently compatible with Julia `v0.7`, `v1.0`, and `v1.1`.
+`ModelConstructors.jl` is currently compatible with Julia `v0.7`, `v1.0`, `v1.1`, `v1.2`, and `v1.3`.
 
 ## Disclaimer
 Copyright Federal Reserve Bank of New York. You may reproduce, use, modify, make derivative works of, and distribute and this code in whole or in part so long as you keep this notice in the documentation associated with any distributed works. Neither the name of the Federal Reserve Bank of New York (FRBNY) nor the names of any of the authors may be used to endorse or promote works derived from this code without prior written permission. Portions of the code attributed to third parties are subject to applicable third party licenses and rights. By your use of this code you accept this license and any applicable third party license.
