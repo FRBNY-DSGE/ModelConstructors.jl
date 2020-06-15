@@ -1185,12 +1185,12 @@ end
 
 """
 ```
-Distributions.rand(p::Vector{AbstractParameter{Float64}})
+rand_regime_switching(p::Vector{AbstractParameter{Float64}})
 ```
 
 Generate a draw from the prior of each parameter in `p`.
 """
-function rand_aug(p::Vector{AbstractParameter{Float64}})
+function rand_regime_switching(p::Vector{AbstractParameter{Float64}})
     draw = zeros(length(p))
     for (i, para) in enumerate(p)
         draw[i] = if para.fixed
@@ -1235,11 +1235,11 @@ Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int)
 Generate `n` draws from the priors of each parameter in `p`.This returns a matrix of size
 `(length(p),n)`, where each column is a sample.
 """
-function Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int; aug::Bool = false)
-    priorsim = aug ? zeros(length(rand_aug(p)), n) : zeros(length(p), n)
+function Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int; regime_switching::Bool = false)
+    priorsim = regime_switching ? zeros(length(rand_regime_switching(p)), n) : zeros(length(p), n)
     for i in 1:n
-        if aug
-            priorsim[:, i] = rand_aug(p)
+        if regime_switching
+            priorsim[:, i] = rand_regime_switching(p)
         else
             priorsim[:, i] = rand(p)
         end
