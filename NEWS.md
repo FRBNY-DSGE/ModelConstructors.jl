@@ -1,5 +1,8 @@
-# ModelConstructors.jl v0.1.7 Release Notes
-- Add bakc New Parameter types that work with both Autodiff functionality and allow backwards compatibility
+# ModelConstructors.jl v0.1.9 Release Notes
+- Implement regime switching in Parameter types.
+
+# ModelConstructors.jl v0.1.8 Release Notes
+- Add back New Parameter types that work with both Autodiff functionality and allow backwards compatibility
 
 # ModelConstructors.jl v0.1.7 Release Notes
 - Temporarily revert back to old Parameter types to fix SMC.jl tests and allow full backwards compatibility to old Parameters
