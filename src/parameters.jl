@@ -1166,7 +1166,7 @@ Distributions.rand(p::Vector{AbstractParameter{Float64}}; regime_switching::Bool
 
 Generate a draw from the prior of each parameter in `p`.
 """
-function Distributions.rand(p::Vector{AbstractParameter{Float64}}; regime_switching::Bool = false))
+function Distributions.rand(p::Vector{AbstractParameter{Float64}}; regime_switching::Bool = false)
 
     if regime_switching
         return rand_regime_switching(p)
