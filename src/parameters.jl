@@ -1161,26 +1161,31 @@ Distributions.pdf(pvec::ParameterVector, values::Vector{S}) where S = exp(logpdf
 
 """
 ```
-Distributions.rand(p::Vector{AbstractParameter{Float64}})
+Distributions.rand(p::Vector{AbstractParameter{Float64}}; regime_switching::Bool = false))
 ```
 
 Generate a draw from the prior of each parameter in `p`.
 """
-function Distributions.rand(p::Vector{AbstractParameter{Float64}})
-    draw = zeros(length(p))
-    for (i, para) in enumerate(p)
-        draw[i] = if para.fixed
-            para.value
-        else
-            # Resample until all prior draws are within the value bounds
-            prio = rand(para.prior.value)
-            while !(para.valuebounds[1] < prio < para.valuebounds[2])
+function Distributions.rand(p::Vector{AbstractParameter{Float64}}; regime_switching::Bool = false))
+
+    if regime_switching
+        return rand_regime_switching(p)
+    else
+        draw = zeros(length(p))
+        for (i, para) in enumerate(p)
+            draw[i] = if para.fixed
+                para.value
+            else
+                # Resample until all prior draws are within the value bounds
                 prio = rand(para.prior.value)
+                while !(para.valuebounds[1] < prio < para.valuebounds[2])
+                    prio = rand(para.prior.value)
+                end
+                prio
             end
-            prio
         end
+        return draw
     end
-    return draw
 end
 
 """
