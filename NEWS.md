@@ -1,3 +1,6 @@
+# ModelConstructors.jl v0.1.11 Release Notes
+- Fix bugs in v0.1.10
+
 # ModelConstructors.jl v0.1.10 Release Notes
 - Add random sampling with regime switching in Parameter types
 
