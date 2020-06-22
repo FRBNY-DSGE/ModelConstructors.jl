@@ -73,3 +73,52 @@ function toggle_regime!(p::Parameter{S}, i::Int64) where S <: Float64
         end
     end
 end
+
+"""
+```
+get_values(pvec::ParameterVector{S}; regime_switching::Bool = true) where {S <: Real}
+```
+
+constructs a vector of the underlying values in a `ParameterVector`, including
+if there are regime-switching values.
+"""
+function get_values(pvec::ParameterVector{S}; regime_switching::Bool = true) where {S <: Real}
+
+    if regime_switching  # Check if regime switching occurs
+        np_reg = n_parameters_regime_switching(pvec)
+        np     = length(pvec)
+        if np == np_reg # No regime-switching
+            vals = map(x -> x.value, pvec.parameters)
+        else
+            vals = Vector{S}(undef, np_reg)
+
+            # An initial pass to find regime 1 values
+            for i in 1:np
+                if isempty(pvec[i].regimes)
+                    vals[i] = pvec[i].value
+                elseif haskey(pvec[i].regimes, :value)
+                    vals[i] = pvec[i].regimes[:value][1]
+                end
+            end
+
+            # A second loop to add in the extra regimes
+            ct = np # a counter to assist us
+            for i in 1:np
+                if !isempty(pvec[i].regimes)
+                    if haskey(pvec[i].regimes, :value)
+                        for j in 1:length(pvec[i].regimes[:value])
+                            if j > 1
+                                ct += 1
+                                vals[ct] = pvec[i].regimes[:value][j]
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    else # Regime switching doesn't occur, so just directly map
+        vals = map(x -> x.value, pvec)
+    end
+
+    return vals
+end

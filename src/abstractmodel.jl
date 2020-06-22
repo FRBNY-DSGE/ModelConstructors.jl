@@ -167,13 +167,7 @@ n_parameters_steady_state(m::AbstractModel) = length(m.steady_state)
 n_parameters_free(m::AbstractModel)         = sum([!α.fixed for α in m.parameters])
 
 function n_parameters_regime_switching(m::AbstractModel)
-    base_num = n_parameters(m)
-    for para in m.parameters
-        if !isempty(para.regimes)
-            base_num += length(para.regimes[:value])
-        end
-    end
-    return base_num
+    return n_parameters_regime_switching(m.parameters)
 end
 
 """

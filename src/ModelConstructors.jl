@@ -29,7 +29,7 @@ module ModelConstructors
         # abstractmodel.jl
         AbstractModel, description,
         n_states, n_states_augmented, n_shocks_exogenous, n_shocks_expectational,
-        n_equilibrium_conditions, n_observables, n_parameters, n_parameters_steady_states,
+        n_equilibrium_conditions, n_observables, n_parameters, n_parameters_regime_switching, n_parameters_steady_states,
         n_parameters_free, n_pseudo_observables, get_dict, get_key,
         spec, subspec, saveroot, dataroot,
         data_vintage, data_id, cond_vintage,

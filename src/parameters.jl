@@ -1029,12 +1029,14 @@ function update!(pvec::ParameterVector, values::Vector{T};
             i = length(pvec)
             for para in pvec
                 if !isempty(para.regimes)
-                    for key in keys(para.regimes[:value])
-                        if key == 1
-                            set_regime_val!(para, key, para.value)
-                        else
-                            i += 1
-                            set_regime_val!(para, key, values[i])
+                    if haskey(para.regimes, :value)
+                        for key in keys(para.regimes[:value])
+                            if key == 1
+                                set_regime_val!(para, key, para.value)
+                            else
+                                i += 1
+                                set_regime_val!(para, key, values[i])
+                            end
                         end
                     end
                 end
@@ -1211,19 +1213,21 @@ function rand_regime_switching(p::Vector{AbstractParameter{Float64}})
     end
     for para in p
         if !isempty(para.regimes)
-            for regime in keys(para.regimes[:value])
-                if regime != 1
-                    one_draw = if para.fixed
-                        para.value
-                    else
-                        # Resample until all prior draws are within the value bounds
-                        prio = rand(para.prior.value)
-                        while !(para.valuebounds[1] < prio < para.valuebounds[2])
+            if haskey(para.regimes, :value)
+                for regime in keys(para.regimes[:value])
+                    if regime != 1
+                        one_draw = if para.fixed
+                            para.value
+                        else
+                            # Resample until all prior draws are within the value bounds
                             prio = rand(para.prior.value)
+                            while !(para.valuebounds[1] < prio < para.valuebounds[2])
+                                prio = rand(para.prior.value)
+                            end
+                            prio
                         end
-                        prio
+                        push!(draw, one_draw)
                     end
-                    push!(draw, one_draw)
                 end
             end
         end
@@ -1297,4 +1301,23 @@ function describe_prior(param::Parameter)
     else
         error("Parameter must either be fixed or have non-null prior: " * string(param.key))
     end
+end
+
+"""
+```
+function n_parameters_regime_switching(p::ParameterVector)
+```
+
+calculates the total number of parameters in `p` across all regimes.
+"""
+function n_parameters_regime_switching(p::ParameterVector)
+    base_num = length(p)
+    for para in p
+        if !isempty(para.regimes)
+            if haskey(para.regimes, :value)
+                base_num += length(para.regimes[:value]) - 1 # first regime is already counted
+            end
+        end
+    end
+    return base_num
 end
