@@ -50,7 +50,7 @@ function likelihood_fnct(p, d)
     β = Vector{Float64}(undef,N)
     for i in 1:N
         α[i]   = p[i * 3 - 2]
-        β[i]   = p[i * 3 - 2]
+        β[i]   = p[i * 3 - 1]
         Σ[i,i] = p[i * 3]^2
     end
     det_Σ = det(Σ)
