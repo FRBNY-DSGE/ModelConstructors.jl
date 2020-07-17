@@ -1,3 +1,7 @@
+# ModelConstructors.jl v0.1.12 Release Notes
+- Update compatibility bounds
+- Fix bugs in examples
+
 # ModelConstructors.jl v0.1.11 Release Notes
 - Fix bugs in v0.1.10
 
