@@ -17,6 +17,23 @@ pkg> add ModelConstructors
 ## Versioning
 `ModelConstructors.jl` is compatible with Julia `v0.7` and `v1.x`
 
+## Precompilation
+
+The `ModelConstructors.jl` package is not precompiled by default because when running code in parallel, we want to re-compile
+the copy of `ModelConstructors.jl` on each processor to guarantee the right version of the code is being used. If users do not
+anticipate using parallelism, then users ought to change the first line of `src/ModelConstructors.jl` from
+
+```
+isdefined(Base, :__precompile__) && __precompile__(false)
+```
+
+to
+
+```
+isdefined(Base, :__precompile__) && __precompile__(true)
+```
+
+
 ## Disclaimer
 Copyright Federal Reserve Bank of New York. You may reproduce, use, modify, make derivative works of, and distribute and this code in whole or in part so long as you keep this notice in the documentation associated with any distributed works. Neither the name of the Federal Reserve Bank of New York (FRBNY) nor the names of any of the authors may be used to endorse or promote works derived from this code without prior written permission. Portions of the code attributed to third parties are subject to applicable third party licenses and rights. By your use of this code you accept this license and any applicable third party license.
 
