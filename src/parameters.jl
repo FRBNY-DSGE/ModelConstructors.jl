@@ -1103,9 +1103,9 @@ function update!(pvec::ParameterVector, values::AbstractVector{S}, indices::BitA
         # or if current_vals can be a smaller memory type (e.g. Float64)
         try
             eltype(values)::AbstractFloat
-            current_vals = Vector{eltype(values)}(map(x -> x.value, pvec))
+            current_vals = Vector{eltype(values)}([x.value for x in pvec])
         catch
-            current_vals = Vector{Real}(map(x -> x.value, pvec))
+            current_vals = Vector{Real}([x.value for x in pvec])
         end
         current_vals[indices] .= values
     end

@@ -88,7 +88,7 @@ function get_values(pvec::ParameterVector{S}; regime_switching::Bool = true) whe
         np_reg = n_parameters_regime_switching(pvec)
         np     = length(pvec)
         if np == np_reg # No regime-switching
-            vals = map(x -> x.value, pvec.parameters)
+            vals = [x.value for x in pvec.parameters]
         else
             vals = Vector{S}(undef, np_reg)
 
@@ -117,7 +117,7 @@ function get_values(pvec::ParameterVector{S}; regime_switching::Bool = true) whe
             end
         end
     else # Regime switching doesn't occur, so just directly map
-        vals = map(x -> x.value, pvec)
+        vals = [x.value for x in pvec]
     end
 
     return vals
