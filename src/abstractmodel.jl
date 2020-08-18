@@ -455,3 +455,7 @@ function rand_prior(m::AbstractModel; ndraws::Int = 100_000)
 
     priorsim
 end
+
+@inline function unpack(m::AbstractModel{S}, ::Val{k}) where {S <: Real, k}
+    m[k].value::S
+end
