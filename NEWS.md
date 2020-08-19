@@ -1,3 +1,6 @@
+# ModelConstructors.jl v0.1.13 (unreleased)
+- Add @unpack macro for accessing parameters of a model
+
 # ModelConstructors.jl v0.1.12 Release Notes
 - Update compatibility bounds
 - Fix bugs in examples

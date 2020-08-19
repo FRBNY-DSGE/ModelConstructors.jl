@@ -8,7 +8,6 @@ os:
     #- osx
     - linux
 julia:
-    - 0.7
     - 1
 notifications:
     email: false

@@ -15,7 +15,7 @@ pkg> add ModelConstructors
 ```
 
 ## Versioning
-`ModelConstructors.jl` is compatible with Julia `v0.7` and `v1.x`
+`ModelConstructors.jl` is compatible with Julia `v1.x`. To use `ModelConstructors.jl` with Julia 0.7, please use tag `v0.1.12` or lower.
 
 ## Precompilation
 
