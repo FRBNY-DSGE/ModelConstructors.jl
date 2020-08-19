@@ -9,7 +9,8 @@ my_tests = [
             "settings",
             "statistics",
             "paths",
-            "regimes"
+            "regimes",
+            "abstractmodel"
             ]
 
 for test in my_tests

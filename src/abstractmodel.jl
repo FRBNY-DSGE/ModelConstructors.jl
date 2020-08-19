@@ -456,6 +456,4 @@ function rand_prior(m::AbstractModel; ndraws::Int = 100_000)
     priorsim
 end
 
-@inline function unpack(m::AbstractModel{S}, ::Val{k}) where {S <: Real, k}
-    isa(m[k], ScaledParameter) ? m[k].scaledvalue::S : m[k].value::S
-end
+@inline unpack(m::AbstractModel, ::Val{k}) where {k} = isa(m[k], ScaledParameter) ? m[k].scaledvalue : m[k].value
