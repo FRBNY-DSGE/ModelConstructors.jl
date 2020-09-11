@@ -1334,6 +1334,6 @@ an `AbstractModel`.
 """
 function parameters2namedtuple(pvec::AbstractVector{S}) where {S <: AbstractParameter}
     tuple_names = Tuple(p.key for p in pvec)
-    tuple_vals = [p.value for p in pvec]
+    tuple_vals = [(isa(p, ScaledParameter) ? p.scaledvalue : p.value) for p in pvec]
     return NamedTuple{tuple_names}(tuple_vals)
 end
