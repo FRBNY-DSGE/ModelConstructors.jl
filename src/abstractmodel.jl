@@ -457,3 +457,7 @@ function rand_prior(m::AbstractModel; ndraws::Int = 100_000)
 end
 
 @inline unpack(m::AbstractModel, ::Val{k}) where {k} = isa(m[k], ScaledParameter) ? m[k].scaledvalue : m[k].value
+
+function parameters2namedtuple(m::AbstractModel)
+    return parameters2namedtuple(get_parameters(m))
+end
