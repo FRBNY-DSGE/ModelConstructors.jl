@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.com/FRBNY-DSGE/ModelConstructors.jl.svg?branch=master)](https://travis-ci.com/FRBNY-DSGE/ModelConstructors.jl)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://frbny-dsge.github.io/ModelConstructors.jl/latest)
+[![Coverage Status](https://coveralls.io/repos/github/FRBNY-DSGE/ModelConstructors.jl/badge.svg?branch=master)](https://coveralls.io/github/FRBNY-DSGE/ModelConstructors.jl?branch=master)
 
 This package contains the building blocks of model objects, such as `Parameter`, `Observable`, `Setting`, and `State` types. You may define any custom model, so long as it has parameters. The model object is used in both [DSGE.jl](https://github.com/FRBNY-DSGE/DSGE.jl) and [SMC.jl](https://github.com/FRBNY-DSGE/SMC.jl).
 
