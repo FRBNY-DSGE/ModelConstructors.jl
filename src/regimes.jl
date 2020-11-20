@@ -104,9 +104,9 @@ function toggle_regime!(p::Parameter{S}, i::Int64) where S <: Real
             elseif field == :transform
                 p.transform = p.regimes[:transform][i]
             elseif field == :prior
-                p.prior = p.regimes[:transform][i]
+                p.prior = p.regimes[:prior][i]
             elseif field == :fixed
-                p.transform = p.regimes[:transform][i]
+                p.transform = p.regimes[:fixed][i]
             end
         elseif haskey(p.regimes, field) && !haskey(p.regimes[field], i)
             error("Regime $i for field $field not found")

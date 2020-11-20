@@ -1202,6 +1202,13 @@ function rand_regime_switching(p::Vector{AbstractParameter{Float64}})
     for (i, para) in enumerate(p)
         draw[i] = if para.fixed
             para.value
+        elseif (haskey(para.regimes, :prior) ? haskey(para.regimes[:prior], 1) : false)
+            # Resample until all prior draws are within the value bounds
+            prio = rand(regime_prior(para, 1).value)
+            while !(para.valuebounds[1] < prio < para.valuebounds[2])
+                prio = rand(regime_prior(para, 1).value)
+            end
+            prio
         else
             # Resample until all prior draws are within the value bounds
             prio = rand(para.prior.value)
@@ -1212,22 +1219,27 @@ function rand_regime_switching(p::Vector{AbstractParameter{Float64}})
         end
     end
     for para in p
-        if !isempty(para.regimes)
-            if haskey(para.regimes, :value)
-                for regime in keys(para.regimes[:value])
-                    if regime != 1
-                        one_draw = if para.fixed
-                            para.value
-                        else
-                            # Resample until all prior draws are within the value bounds
-                            prio = rand(para.prior.value)
-                            while !(para.valuebounds[1] < prio < para.valuebounds[2])
-                                prio = rand(para.prior.value)
-                            end
-                            prio
+        if haskey(para.regimes, :value)
+            for regime in keys(para.regimes[:value])
+                if regime != 1
+                    one_draw = if para.fixed
+                        para.value
+                    elseif (haskey(para.regimes, :prior) ? haskey(para.regimes[:prior], regime) : false)
+                        # Resample until all prior draws are within the value bounds
+                        prio = rand(regime_prior(para, regime).value)
+                        while !(para.valuebounds[1] < prio < para.valuebounds[2])
+                            prio = rand(regime_prior(para, regime).value)
                         end
-                        push!(draw, one_draw)
+                        prio
+                    else
+                        # Resample until all prior draws are within the value bounds
+                        prio = rand(para.prior.value)
+                        while !(para.valuebounds[1] < prio < para.valuebounds[2])
+                            prio = rand(para.prior.value)
+                        end
+                        prio
                     end
+                    push!(draw, one_draw)
                 end
             end
         end
