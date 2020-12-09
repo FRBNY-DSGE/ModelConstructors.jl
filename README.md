@@ -1,6 +1,6 @@
 # ModelConstructors.jl
 
-[![Build Status](https://travis-ci.com/FRBNY-DSGE/ModelConstructors.jl.svg?branch=master)](https://travis-ci.com/FRBNY-DSGE/ModelConstructors.jl)
+![Build Status](https://github.com/FRBNY-DSGE/ModelConstructors.jl/workflows/build/badge.svg?branch=master)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://frbny-dsge.github.io/ModelConstructors.jl/latest)
 [![Coverage Status](https://coveralls.io/repos/github/FRBNY-DSGE/ModelConstructors.jl/badge.svg?branch=master)](https://coveralls.io/github/FRBNY-DSGE/ModelConstructors.jl?branch=master)
 
