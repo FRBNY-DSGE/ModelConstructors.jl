@@ -38,10 +38,18 @@ for likelihood computation and estimation.
 Though all parameters are time-invariant, they can have different features.
 Some parameters are scaled for use when solving the model[^1] and
 constructing the model's measurement equations[^2].
-During optimization, parameters can be transformed from
-model space to the real line via one of three different transformations. These
+
+During optimization, parameters may be transformed from
+model space to the real line via one of three different transformations: `Untransformed`,
+`SquareRoot`, and `Exponential`. These
 transformations are also defined as types, and require additional information
-for each parameter. In some models, steady state values might be relevant parameters.
+for each parameter. Typically, we have two "hyperparameters" for
+these transformations, `a`, and `b`.
+- `Untransformed`: `a` and `b` do nothing
+- `SquareRoot`: `a` and `b` specify the bounds the parameter takes, i.e. ``x\in (a, b)``
+- `Exponential`: `a` and `b` are the parameters in the transformation ``a + exp(x - b)``
+
+In some models, steady state values might be relevant parameters.
 They are typically functions of other parameters, so they do not need
 to be estimated directly.
 
