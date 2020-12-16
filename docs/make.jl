@@ -22,10 +22,7 @@ deploydocs(
     repo = "github.com/FRBNY-DSGE/ModelConstructors.jl.git",
     target = "build",
     deps = nothing,
-    devbranch = "master",
+    devbranch = "main",
     branch = "gh-pages",
-    # versions = "v#",
-    # julia = "0.7",
-    # osname = "osx",
     make = nothing
 )
