@@ -20,8 +20,8 @@ ModelConstructors.set_regime_val!(u, 1, 2.5230)
     @test_throws KeyError ModelConstructors.regime_val(u, 3)
     ModelConstructors.toggle_regime!(u, 2)
     @test u.value == 0.
-    @test ModelConstructors.ModelConstructors.regime_val(u, 1) == 2.5230
-    @test ModelConstructors.ModelConstructors.regime_val(u, 2) == 0.
+    @test ModelConstructors.regime_val(u, 1) == 2.5230
+    @test ModelConstructors.regime_val(u, 2) == 0.
     ModelConstructors.toggle_regime!(u, 1)
     @test u.value == 2.5230
     @test ModelConstructors.regime_val(u, 1) == 2.5230
@@ -43,6 +43,52 @@ ModelConstructors.set_regime_val!(u, 1, 2.5230)
 
     @test ModelConstructors.regime_fixed(u, 1)
     @test !ModelConstructors.regime_fixed(u, 2)
+end
+
+@testset "Regime switching with parameters when model regimes are different" begin
+    d = Dict(2 => 1, 3 => 2, 4 => 3)
+    @test_throws ParamBoundsError ModelConstructors.set_regime_val!(u, 3, 0., d)
+    ModelConstructors.set_regime_val!(u, 3, 0., d; override_bounds = true)
+    uvec = ParameterVector{Float64}(undef, 2)
+    uvec[1] = u
+    uvec[2] = u
+
+    @test !isempty(u.regimes)
+    @test u.regimes[:value][1] == 2.5230
+    @test u.regimes[:value][2] == 0.
+    @test u.value == 2.5230
+    @test ModelConstructors.regime_val(u, 2, d) == 2.5230
+    @test ModelConstructors.regime_val(u, 3, d) == 0.
+    @test_throws KeyError ModelConstructors.regime_val(u, 4, d)
+    ModelConstructors.toggle_regime!(u, 3, d)
+    @test u.value == 0.
+    @test ModelConstructors.regime_val(u, 2, d) == 2.5230
+    @test ModelConstructors.regime_val(u, 3, d) == 0.
+    ModelConstructors.toggle_regime!(u, 2, d)
+    @test u.value == 2.5230
+    @test ModelConstructors.regime_val(u, 2, d) == 2.5230
+    @test ModelConstructors.regime_val(u, 3, d) == 0.
+
+    @test n_parameters_regime_switching(uvec) == 4
+    ModelConstructors.toggle_regime!(u, 2, d)
+    @test ModelConstructors.get_values(uvec; regime_switching = false) == [2.5230, 2.5230]
+    @test ModelConstructors.get_values(uvec) == [2.5230, 2.5230, 0., 0.]
+
+    ModelConstructors.set_regime_prior!(u, 2, Uniform(0., 5.), d)
+    ModelConstructors.set_regime_prior!(u, 3, Normal(0., 1.), d)
+
+    @test get(ModelConstructors.regime_prior(u, 1)) == Uniform(0., 5.)
+    @test get(ModelConstructors.regime_prior(u, 2)) == Normal(0., 1.)
+    @test get(ModelConstructors.regime_prior(u, 2, d)) == Uniform(0., 5.)
+    @test get(ModelConstructors.regime_prior(u, 3, d)) == Normal(0., 1.)
+
+    ModelConstructors.set_regime_fixed!(u, 2, true, d)
+    ModelConstructors.set_regime_fixed!(u, 3, false, d)
+
+    @test ModelConstructors.regime_fixed(u, 1)
+    @test !ModelConstructors.regime_fixed(u, 2)
+    @test ModelConstructors.regime_fixed(u, 2, d)
+    @test !ModelConstructors.regime_fixed(u, 3, d)
 end
 
 nothing
