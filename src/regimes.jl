@@ -53,9 +53,7 @@ function regime_val(p::Parameter{S}, i::Int64) where S <: Real
     return p.regimes[:value][i]
 end
 
-function regime_val(p::Parameter{S}, model_regime::Int64, d::AbstractDict) where S <: Real
-    return regime_val(p, d[model_regime])
-end
+regime_val(p::Parameter{S}, model_regime::Int64, d::AbstractDict) where S <: Real = regime_val(p, d[model_regime])
 
 """
 ```
@@ -124,9 +122,7 @@ function regime_prior(p::Parameter{S}, i::Int64) where S <: Real
     return p.regimes[:prior][i]
 end
 
-function regime_prior(p::Parameter{S}, model_regime::Int64, d::AbstractDict) where S <: Real
-    return regime_prior(p, d[model_regime])
-end
+regime_prior(p::Parameter{S}, model_regime::Int64, d::AbstractDict) where S <: Real = regime_prior(p, d[model_regime])
 
 """
 ```
@@ -174,9 +170,7 @@ function regime_fixed(p::Parameter{S}, i::Int64) where S <: Real
     return p.regimes[:fixed][i]
 end
 
-function regime_fixed(p::Parameter{S}, model_regime::Int64, d::AbstractDict) where S <: Real
-    regime_fixed(p, d[model_regime])
-end
+regime_fixed(p::Parameter{S}, model_regime::Int64, d::AbstractDict) where S <: Real = regime_fixed(p, d[model_regime])
 
 """
 ```
