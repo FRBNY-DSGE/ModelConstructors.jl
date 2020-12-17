@@ -2,7 +2,7 @@ using Test, ModelConstructors
 
 u = parameter(:bloop, 2.5230, (1e-8, 5.), (1e-8, 5.), ModelConstructors.SquareRoot(); fixed = true)
 ModelConstructors.set_regime_val!(u, 1, 2.5230)
-# CURRENTLY ONLY TESTS VALUE AND PRIOR SWITCHING, NO REGIME SWITCHING IN OTHER CASES
+# CURRENTLY ONLY TESTS VALUE, PRIOR, and FIXED SWITCHING, NO REGIME SWITCHING IN OTHER CASES
 @info "The following error 'get_regime_val(), Input Error: No regime 3' is expected."
 @testset "Regime switching with parameters" begin
     @test_throws ParamBoundsError ModelConstructors.set_regime_val!(u, 2, 0.)
@@ -37,6 +37,12 @@ ModelConstructors.set_regime_val!(u, 1, 2.5230)
 
     @test get(ModelConstructors.regime_prior(u, 1)) == Uniform(0., 5.)
     @test get(ModelConstructors.regime_prior(u, 2)) == Normal(0., 1.)
+
+    ModelConstructors.set_regime_fixed!(u, 1, true)
+    ModelConstructors.set_regime_fixed!(u, 2, false)
+
+    @test ModelConstructors.regime_fixed(u, 1)
+    @test !ModelConstructors.regime_fixed(u, 2)
 end
 
 nothing

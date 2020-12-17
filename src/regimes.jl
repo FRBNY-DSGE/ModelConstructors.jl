@@ -30,7 +30,7 @@ returns the value of `p` in regime `i`.
 """
 function regime_val(p::Parameter{S}, i::Int64) where S <: Real
     if !haskey(p.regimes, :value) || !haskey(p.regimes[:value], i)
-        @error "get_regime_val(), Input Error: No regime $(i)"
+        @error "regime_val(), Input Error: No regime $(i)"
     end
     return p.regimes[:value][i]
 end
@@ -70,9 +70,39 @@ returns the prior of `p` in regime `i`.
 """
 function regime_prior(p::Parameter{S}, i::Int64) where S <: Real
     if !haskey(p.regimes, :prior) || !haskey(p.regimes[:prior], i)
-        @error "get_regime_prior(), Input Error: No regime $(i)"
+        @error "regime_prior(), Input Error: No regime $(i)"
     end
     return p.regimes[:prior][i]
+end
+
+"""
+```
+ set_regime_fixed!(p::Parameter{S}, i::Int64, v::S)
+```
+
+sets whether `p` is fixed in regime `i` of `p`.
+"""
+function set_regime_fixed!(p::Parameter, i::Int64, v::S) where {S <: Bool}
+    if !haskey(p.regimes, :fixed)
+        p.regimes[:fixed] = OrderedDict{Int64, Bool}()
+    end
+    p.regimes[:fixed][i] = v
+
+    return v
+end
+
+"""
+```
+function regime_fixed(p::Parameter{S}, i::Int64) where S <: Real
+```
+
+returns true if `p` is fixed in regime `i` and false otherwise.
+"""
+function regime_fixed(p::Parameter{S}, i::Int64) where S <: Real
+    if !haskey(p.regimes, :fixed) || !haskey(p.regimes[:fixed], i)
+        @error "regime_fixed(), Input Error: No regime $(i)"
+    end
+    return p.regimes[:fixed][i]
 end
 
 """
