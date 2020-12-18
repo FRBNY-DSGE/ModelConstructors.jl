@@ -1277,13 +1277,17 @@ end
 
 """
 ```
-Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int)
+Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int;
+    regime_switching::Bool = false, toggle::Bool = true)
 ```
 
 Generate `n` draws from the priors of each parameter in `p`.This returns a matrix of size
-`(length(p),n)`, where each column is a sample.
+`(length(p),n)`, where each column is a sample. To sample from `p` when it has
+regime-switching, set `regime_switching =  true`. The `toggle` keyword is only
+relevant for regime-switching sampling. Please see `?ModelConstructors.rand_regime_switching`.
 """
-function Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int; regime_switching::Bool = false)
+function Distributions.rand(p::Vector{AbstractParameter{Float64}}, n::Int;
+                            regime_switching::Bool = false, toggle::Bool = true)
     priorsim = regime_switching ? zeros(length(rand_regime_switching(p)), n) : zeros(length(p), n)
     for i in 1:n
         if regime_switching
