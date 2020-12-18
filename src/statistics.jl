@@ -4,10 +4,12 @@
 Calculates log joint prior density of m.parameters.
 """
 function prior(parameters::ParameterVector{T}) where {T<:Number}
-    free_params = Base.filter(θ -> !θ.fixed, parameters)
+    free_params = Base.filter(x -> !_filter_all_fixed_para(x), parameters)
     logpdfs = map(logpdf, free_params)
     return sum(logpdfs)
 end
+
+_filter_all_fixed_para(p::Parameter) = haskey(p.regimes, :fixed) ? all(values(p.regimes[:fixed])) : p.fixed
 
 """
 ```

@@ -1011,32 +1011,33 @@ function update!(pvec::ParameterVector, values::Vector{T};
     # this function is optimised for speed
  #   @assert length(values) == length(pvec) "Length of input vector (=$(length(values))) must match length of parameter vector (=$(length(pvec)))"
     if change_value_type
-        tmp = if typeof(pvec[1]) <: ParameterAD
+        tmp = if eltype(pvec) <: ParameterAD
             (x,y) -> parameter_ad(x, y; change_value_type = change_value_type)
         else
             (x,y) -> parameter(x, y; change_value_type = change_value_type)
         end
         map!(tmp, pvec, pvec, values)
     else
-        if typeof(pvec[1]) <: ParameterAD
+        if eltype(pvec) <: ParameterAD
             map!(parameter_ad, pvec, pvec, values[1:length(pvec)])
         else
             map!(parameter, pvec, pvec, values[1:length(pvec)])
         end
         # If length of values (Floats) is longer than of parameters (Parameters), put the extra stuff into regimes fields
-        # in order of
+        # in the following order. Say α, β, γ are parameters, where β has 3 regimes and γ has 4 regimes.
+        # For elements in values after the first `length(pvec)`, values[length(pvec) + 1] is the second regime value of β,
+        # values[length(pvec) + 2] is the third regime value of β, values[length(pvec) + 3] is the second regime of γ,
+        # values[length(pvec) + 4] is the third regime of γ, and values[length(pvec) + 5] is the fourth regime of γ.
         if length(values) > length(pvec)
             i = length(pvec)
             for para in pvec
-                if !isempty(para.regimes)
-                    if haskey(para.regimes, :value)
-                        for key in keys(para.regimes[:value])
-                            if key == 1
-                                set_regime_val!(para, key, para.value)
-                            else
-                                i += 1
-                                set_regime_val!(para, key, values[i])
-                            end
+                if haskey(para.regimes, :value)
+                    for key in keys(para.regimes[:value])
+                        if key == 1
+                            set_regime_val!(para, key, para.value)
+                        else
+                            i += 1
+                            set_regime_val!(para, key, values[i])
                         end
                     end
                 end
@@ -1132,7 +1133,28 @@ end
 
 Distributions.pdf(p::AbstractParameter) = exp(logpdf(p))
 # we want the unscaled value for ScaledParameters
-Distributions.logpdf(p::Parameter{T,U}) where {T, U} = logpdf(get(p.prior),p.value)
+function Distributions.logpdf(p::Parameter{T,U}) where {T, U}
+    if haskey(p.regimes, :value) # regime-switching values
+        free_para_regimes = if haskey(p.regimes, :fixed) # Figure out which regimes
+            findall(.!values(p.regimes[:fixed]))         # are not fixed. Note p.regimes[:fixed] is an OrderedDict
+        else
+            1:length(p.regimes[:value])
+        end
+
+        if isnothing(free_para_regimes) # Regimes can't all be fixed
+            error("All regimes are fixed. The log prior cannot be evaluated for Parameter $(p.key)")
+        end
+
+        if haskey(p.regimes, :prior) # does prior also regime switch?
+            return sum([logpdf(get(regime_prior(p, i)), regime_val(p, i)) for i in free_para_regimes])
+        else
+            _prior = get(p.prior)
+            return sum([logpdf(_prior, regime_val(p, i)) for i in free_para_regimes])
+        end
+    else # no regime-switching values
+        return logpdf(get(p.prior), p.value)
+    end
+end
 
 # this function is optimised for speed
 function Distributions.logpdf(pvec::ParameterVector{T}) where T
@@ -1163,15 +1185,17 @@ Distributions.pdf(pvec::ParameterVector, values::Vector{S}) where S = exp(logpdf
 
 """
 ```
-Distributions.rand(p::Vector{AbstractParameter{Float64}}; regime_switching::Bool = false))
+Distributions.rand(p::Vector{AbstractParameter{Float64}}; regime_switching::Bool = false,
+    toggle::Bool = true)
 ```
 
 Generate a draw from the prior of each parameter in `p`.
 """
-function Distributions.rand(p::Vector{AbstractParameter{Float64}}; regime_switching::Bool = false)
+function Distributions.rand(p::Vector{AbstractParameter{Float64}}; regime_switching::Bool = false,
+                            toggle::Bool = true)
 
     if regime_switching
-        return rand_regime_switching(p)
+        return rand_regime_switching(p; toggle = toggle)
     else
         draw = zeros(length(p))
         for (i, para) in enumerate(p)
@@ -1192,14 +1216,17 @@ end
 
 """
 ```
-rand_regime_switching(p::Vector{AbstractParameter{Float64}})
+rand_regime_switching(p::Vector{AbstractParameter{Float64}}; toggle::Bool = true)
 ```
 
 Generate a draw from the prior of each parameter in `p`.
 """
-function rand_regime_switching(p::Vector{AbstractParameter{Float64}})
+function rand_regime_switching(p::Vector{AbstractParameter{Float64}}; toggle::Bool = true)
     draw = zeros(length(p))
+
+    # Handle the regime 1 values
     for (i, para) in enumerate(p)
+
         draw[i] = if para.fixed
             para.value
         elseif (haskey(para.regimes, :prior) ? haskey(para.regimes[:prior], 1) : false)
@@ -1222,8 +1249,8 @@ function rand_regime_switching(p::Vector{AbstractParameter{Float64}})
         if haskey(para.regimes, :value)
             for regime in keys(para.regimes[:value])
                 if regime != 1
-                    one_draw = if para.fixed
-                        para.value
+                    one_draw = if (haskey(para.regimes, :fixed) ? regime_fixed(para, regime) : para.fixed)
+                        regime_val(para, regime)
                     elseif (haskey(para.regimes, :prior) ? haskey(para.regimes[:prior], regime) : false)
                         # Resample until all prior draws are within the value bounds
                         prio = rand(regime_prior(para, regime).value)
