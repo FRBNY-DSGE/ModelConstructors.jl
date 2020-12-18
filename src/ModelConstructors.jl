@@ -55,6 +55,10 @@ module ModelConstructors
         AbstractVectorParameter, VectorParameter, VectorParameterVector, ScaledVectorParameter,
         UnscaledVectorParameter, Untransformed,
 
+        # regimes.jl
+        set_regime_val!, regime_va!, set_regime_prior!, regime_prior, set_regime_fixed!, regime_fixed,
+        toggle_regime!,
+
         # statistics.jl
         prior, posterior, posterior!,
 
