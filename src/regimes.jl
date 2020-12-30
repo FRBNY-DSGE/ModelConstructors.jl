@@ -1,4 +1,4 @@
-# TODO: regime-switching valuebounds, add keyword update_valuebounds for set_regime_fixed
+# DONE: regime-switching valuebounds, add keyword update_valuebounds for set_regime_fixed
 # to automatically create regime-switching valuebounds
 
 """
@@ -27,13 +27,17 @@ function set_regime_val!(p::Parameter{S},
     if !haskey(p.regimes, :value)
         p.regimes[:value] = OrderedDict{Int,S}()
     end
+
     if haskey(p.regimes, :fixed) ? regime_fixed(p, i) : false
         if haskey(p.regimes[:value], i)
+            @warn "Parameter $(p.key) is fixed - can't be changed"
             return p.regimes[:value][i]
         else # If it doesn't exist yet, then we want to set the value for this regime
             p.regimes[:value][i] = v
+            p.regimes[:valuebounds][i] = (v,v)
         end
-    elseif p.valuebounds[1] <= v <= p.valuebounds[2] || override_bounds
+    elseif (haskey(p.regimes, :valuebounds) && length(p.regimes[:valuebounds]) >= i &&
+            p.regimes[:valuebounds][i][1] <= v <= p.regimes[:valuebounds][i][2]) || override_bounds
         p.regimes[:value][i] = v
     elseif p.fixed
         throw(ParamBoundsError("Parameter $(p.key) is fixed. Regimes cannot be added unless keyword `override_bounds` is set to `true`."))
@@ -124,7 +128,7 @@ regime_prior(p::Parameter{S}, model_regime::Int, d::AbstractDict{Int, Int}) wher
 ```
 
 returns the prior of `p` in regime `i` for the first method
-and the prior of `p` in regime `d[model_regime` for the second.
+and the prior of `p` in regime `d[model_regime]` for the second.
 """
 function regime_prior(p::Parameter{S}, i::Int) where S <: Real
     if !haskey(p.regimes, :prior) || !haskey(p.regimes[:prior], i)
@@ -137,10 +141,11 @@ regime_prior(p::Parameter{S}, model_regime::Int, d::AbstractDict{Int, Int}) wher
 
 """
 ```
-set_regime_fixed!(p::Parameter{S}, i::Int, v::S)
+set_regime_fixed!(p::Parameter{S}, i::Int, v::S; update_valuebounds::Bool = true)
 ```
 
-sets whether `p` is fixed in regime `i` of `p`.
+sets whether `p` is fixed in regime `i` of `p`. Set update_valuebounds to true to
+set the valuebounds to match the fixed value.
 
 The second method allows the user to pass a dictionary to permit the case where
 there may be differences between the regimes of a regime-switching model and
@@ -151,18 +156,27 @@ maps each "model" regime to a "parameter" regime. In this way,
 the second method specifies which "parameter" regime should be used at a given
 "model" regime.
 """
-function set_regime_fixed!(p::Parameter, i::Int, v::S) where {S <: Bool}
+function set_regime_fixed!(p::Parameter, i::Int, v::S; update_valuebounds::Bool = v) where {S <: Bool}
     if !haskey(p.regimes, :fixed)
         p.regimes[:fixed] = OrderedDict{Int, Bool}()
     end
     p.regimes[:fixed][i] = v
 
+    if !haskey(p.regimes, :valuebounds)
+        p.regimes[:valuebounds] = OrderedDict{Int, typeof(p.value)}()
+    end
+    if update_valuebounds && haskey(p.regimes, :value)
+        p.regimes[:valuebounds][i] = (p.regimes[:value][i], p.regimes[:value][i])
+    elseif update_valuebounds
+        p.regimes[:valuebounds][i] = (p.value, p.value)
+    end
+
     return v
 end
 
 function set_regime_fixed!(p::Parameter, model_regime::Int, v::S,
-                           d::AbstractDict{Int, Int}) where {S <: Bool}
-    set_regime_fixed!(p, d[model_regime], v)
+                           d::AbstractDict{Int, Int}; update_valuebounds::Bool = v) where {S <: Bool}
+    set_regime_fixed!(p, d[model_regime], v; update_valuebounds = update_valuebounds)
 end
 
 """
@@ -182,6 +196,37 @@ function regime_fixed(p::Parameter{S}, i::Int) where S <: Real
 end
 
 regime_fixed(p::Parameter{S}, model_regime::Int, d::AbstractDict{Int, Int}) where S <: Real = regime_fixed(p, d[model_regime])
+
+
+"""
+```
+set_regime_valuebounds!(p::Parameter{S}, i::Int, v::S)
+```
+
+sets valuebounds for `p` in regime `i` to `v`.
+
+The second method allows the user to pass a dictionary to permit the case where
+there may be differences between the regimes of a regime-switching model and
+the regimes for the parameters. For example, aside from regime-switching in parameters,
+the model may also include other forms of regime-switching. To allow
+estimation of regime-switching parameters in such a model, the dictionary `d`
+maps each "model" regime to a "parameter" regime. In this way,
+the second method specifies which "parameter" regime should be used at a given
+"model" regime.
+"""
+function set_regime_valuebounds!(p::Parameter, i::Int, v::S) where {S <: Tuple{Real,Real}}
+    if !haskey(p.regimes, :valuebounds)
+        p.regimes[:valuebounds] = OrderedDict{Int, typeof(p.value)}()
+    end
+    p.regimes[:valuebounds][i] = v
+
+    return v
+end
+
+function set_regime_valuebounds!(p::Parameter, model_regime::Int, v::S,
+                           d::AbstractDict{Int, Int}) where {S <: Tuple{Real,Real}}
+    set_regime_fixed!(p, d[model_regime], v)
+end
 
 """
 ```

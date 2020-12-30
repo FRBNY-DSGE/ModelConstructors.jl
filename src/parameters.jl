@@ -1254,7 +1254,7 @@ function rand_regime_switching(p::Vector{AbstractParameter{Float64}}; toggle::Bo
                     elseif (haskey(para.regimes, :prior) ? haskey(para.regimes[:prior], regime) : false)
                         # Resample until all prior draws are within the value bounds
                         prio = rand(regime_prior(para, regime).value)
-                        while !(para.valuebounds[1] < prio < para.valuebounds[2])
+                        while !((haskey(para.regimes, :valuebounds) && (para.regimes[:valuebounds][regime][1] < prio < para.regimes[:valuebounds][regime][2])) || (!haskey(para.regimes, :valuebounds) && para.valuebounds[1] < prio < para.valuebounds[2]))
                             prio = rand(regime_prior(para, regime).value)
                         end
                         prio
