@@ -167,19 +167,23 @@ function set_regime_fixed!(p::Parameter, i::Int, v::S; update_valuebounds::Tuple
     end
 
     # Update valuebounds - same as the value if v is true. Otherwise, take argument or find reasonable bounds
-    ## if v is false. Note: this can be made less complication and prone to errors if we don't update
-    ## valuebounds when v is true. Nothing should break if we do this.
+    ## if v is false. Note: we don't update valuebounds when v is true because it's unnecessry and messes up
+    ## calculations when calling the same parameter, regime with v = true and then v = false.
+#=
     if update_valuebounds[1] && (isnan(update_valuebounds[2][1]) || isnan(update_valuebounds[2][2])) && v
+        # p.regimes[:valuebounds][i] = p.valuebounds
         if haskey(p.regimes, :value)
             p.regimes[:valuebounds][i] = (p.regimes[:value][i], p.regimes[:value][i])
         else
             p.regimes[:valuebounds][i] = (p.value, p.value)
         end
-    elseif update_valuebounds[1] && (isnan(update_valuebounds[2][1]) || isnan(update_valuebounds[2][2])) && !v
+=#
+    elseif update_valuebounds[1] && (isnan(update_valuebounds[2][1]) || isnan(update_valuebounds[2][2]))# && !v
         if !haskey(p.regimes, :valuebounds) || !haskey(p.regimes[:valuebounds], i)
             p.regimes[:valuebounds][i] = p.valuebounds
-        elseif p.regimes[:valuebounds][i][1] == p.regimes[:valuebounds][i][2]
-            if !p.fixed
+        end
+        if p.regimes[:valuebounds][i][1] == p.regimes[:valuebounds][i][2]
+            if p.valuebounds[1] != p.valuebounds[2]
                 p.regimes[:valuebounds][i] = p.valuebounds
             else
                 for j in keys(p.regimes[:valuebounds])
