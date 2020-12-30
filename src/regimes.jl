@@ -37,7 +37,7 @@ function set_regime_val!(p::Parameter{S},
             p.regimes[:valuebounds][i] = (v,v)
         end
     elseif (haskey(p.regimes, :valuebounds) && length(p.regimes[:valuebounds]) >= i &&
-            p.regimes[:valuebounds][i][1] <= v <= p.regimes[:valuebounds][i][2]) || override_bounds
+            p.regimes[:valuebounds][i][1] <= v <= p.regimes[:valuebounds][i][2]) || ((!haskey(p.regimes, :valuebounds) || length(p.regimes[:valuebounds]) < i) && p.valuebounds[1] <= v <= p.valuebounds[2]) || override_bounds
         p.regimes[:value][i] = v
     elseif p.fixed
         throw(ParamBoundsError("Parameter $(p.key) is fixed. Regimes cannot be added unless keyword `override_bounds` is set to `true`."))
