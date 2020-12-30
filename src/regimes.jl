@@ -178,7 +178,7 @@ function set_regime_fixed!(p::Parameter, i::Int, v::S; update_valuebounds::Tuple
             p.regimes[:valuebounds][i] = (p.value, p.value)
         end
 =#
-    elseif update_valuebounds[1] && (isnan(update_valuebounds[2][1]) || isnan(update_valuebounds[2][2]))# && !v
+    if update_valuebounds[1] && (isnan(update_valuebounds[2][1]) || isnan(update_valuebounds[2][2]))# && !v
         if !haskey(p.regimes, :valuebounds) || !haskey(p.regimes[:valuebounds], i)
             p.regimes[:valuebounds][i] = p.valuebounds
         end
