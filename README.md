@@ -1,7 +1,8 @@
 # ModelConstructors.jl
 
 ![Build Status](https://github.com/FRBNY-DSGE/ModelConstructors.jl/workflows/build/badge.svg?branch=main)
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://frbny-dsge.github.io/ModelConstructors.jl/latest)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://frbny-dsge.github.io/ModelConstructors.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://frbny-dsge.github.io/ModelConstructors.jl/latest)
 [![codecov](https://codecov.io/gh/FRBNY-DSGE/ModelConstructors.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/FRBNY-DSGE/ModelConstructors.jl)
 
 This package contains the building blocks of model objects, such as `Parameter`, `Observable`, `Setting`, and `State` types. You may define any custom model, so long as it has parameters. The model object is used in both [DSGE.jl](https://github.com/FRBNY-DSGE/DSGE.jl) and [SMC.jl](https://github.com/FRBNY-DSGE/SMC.jl).
