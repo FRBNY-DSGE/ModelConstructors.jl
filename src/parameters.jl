@@ -1227,7 +1227,7 @@ function rand_regime_switching(p::Vector{AbstractParameter{Float64}}; toggle::Bo
     # Handle the regime 1 values
     for (i, para) in enumerate(p)
 
-        draw[i] = if para.fixed
+        draw[i] = if para.fixed # It is assumed regimes are toggled to regime 1, so para.fixed = regimes[:fixed][1] if haskey(regimes, :fixed)
             para.value
         elseif (haskey(para.regimes, :prior) ? haskey(para.regimes[:prior], 1) : false)
             # Resample until all prior draws are within the value bounds
@@ -1250,6 +1250,8 @@ function rand_regime_switching(p::Vector{AbstractParameter{Float64}}; toggle::Bo
             for regime in keys(para.regimes[:value])
                 if regime != 1
                     one_draw = if (haskey(para.regimes, :fixed) ? regime_fixed(para, regime) : para.fixed)
+                        # regimes are toggled to regime 1, so need to examine para.regimes[:fixed].
+                        # If it doesn't exist, we assume all regimes are fixed.
                         regime_val(para, regime)
                     elseif (haskey(para.regimes, :prior) ? haskey(para.regimes[:prior], regime) : false)
                         # Resample until all prior draws are within the value bounds

@@ -1,6 +1,6 @@
 using Test, ModelConstructors
 
-u = parameter(:bloop, 2.5230, (1e-8, 5.), (1e-8, 5.), ModelConstructors.SquareRoot(); fixed = true)
+u = parameter(:bloop, 2.5230, (1e-8, 5.), (1e-8, 5.), ModelConstructors.SquareRoot(); fixed = false)
 ModelConstructors.set_regime_val!(u, 1, 2.5230)
 # CURRENTLY ONLY TESTS VALUE, PRIOR, and FIXED SWITCHING, NO REGIME SWITCHING IN OTHER CASES
 @info "The following error 'get_regime_val(), Input Error: No regime 3' is expected."

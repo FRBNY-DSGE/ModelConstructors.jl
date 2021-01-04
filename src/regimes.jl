@@ -40,6 +40,12 @@ function set_regime_val!(p::Parameter{S},
             p.regimes[:valuebounds][i][1] <= v <= p.regimes[:valuebounds][i][2]) || ((!haskey(p.regimes, :valuebounds) || length(p.regimes[:valuebounds]) < i) && p.valuebounds[1] <= v <= p.valuebounds[2]) || override_bounds
         p.regimes[:value][i] = v
     elseif p.fixed
+        # When parameters are initialized as non-regime-switching and fixed,
+        # the valuebounds is automatically set to (p.value, p.value).
+        # Unless valuebounds are set to regime-switching, it is not possible
+        # to add extra regimes without using `override_bounds = true` (unless using the same value).
+        # Note that the rest of ModelConstructors.jl assumes that if `p.fixed = true`
+        # and haskey(p.regimes, :fixed) is false, then all regimes (if any) are also fixed.
         throw(ParamBoundsError("Parameter $(p.key) is fixed. Regimes cannot be added unless keyword `override_bounds` is set to `true`."))
     else
         throw(ParamBoundsError("New value of $(string(p.key)) ($(v)) is out of bounds ($(p.valuebounds))"))
