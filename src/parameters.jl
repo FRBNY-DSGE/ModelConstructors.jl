@@ -1023,6 +1023,8 @@ function update!(pvec::ParameterVector, values::Vector{T};
         else
             map!(parameter, pvec, pvec, values[1:length(pvec)])
         end
+        # It is assumed that, if regime-switching, the regimes are toggled to regime 1 before calling update!
+
         # If length of values (Floats) is longer than of parameters (Parameters), put the extra stuff into regimes fields
         # in the following order. Say α, β, γ are parameters, where β has 3 regimes and γ has 4 regimes.
         # For elements in values after the first `length(pvec)`, values[length(pvec) + 1] is the second regime value of β,
@@ -1036,6 +1038,7 @@ function update!(pvec::ParameterVector, values::Vector{T};
                         if key == 1
                             set_regime_val!(para, key, para.value)
                         else
+                            # Note that set_regime_val! handles what to do if para is fixed, enforce valuebounds, etc.
                             i += 1
                             set_regime_val!(para, key, values[i])
                         end
@@ -1251,19 +1254,21 @@ function rand_regime_switching(p::Vector{AbstractParameter{Float64}}; toggle::Bo
                 if regime != 1
                     one_draw = if (haskey(para.regimes, :fixed) ? regime_fixed(para, regime) : para.fixed)
                         # regimes are toggled to regime 1, so need to examine para.regimes[:fixed].
-                        # If it doesn't exist, we assume all regimes are fixed.
+                        # If it doesn't exist and `para.fixed = true`, then we assume all regimes are fixed.
                         regime_val(para, regime)
-                    elseif (haskey(para.regimes, :prior) ? haskey(para.regimes[:prior], regime) : false)
+                    elseif (haskey(para.regimes, :prior) ? haskey(para.regimes[:prior], regime) : false) # regime-switching in prior
                         # Resample until all prior draws are within the value bounds
                         prio = rand(regime_prior(para, regime).value)
-                        while !((haskey(para.regimes, :valuebounds) && (para.regimes[:valuebounds][regime][1] < prio < para.regimes[:valuebounds][regime][2])) || (!haskey(para.regimes, :valuebounds) && para.valuebounds[1] < prio < para.valuebounds[2]))
+                        lowerbound, upperbound = haskey(para.regimes, :valuebounds) ? regime_valuebounds(para, regime) : para.valuebounds
+                        while !(lowerbound < prio < upperbound)
                             prio = rand(regime_prior(para, regime).value)
                         end
                         prio
-                    else
+                    else # just use para.prior for prior draws
                         # Resample until all prior draws are within the value bounds
                         prio = rand(para.prior.value)
-                        while !(para.valuebounds[1] < prio < para.valuebounds[2])
+                        lowerbound, upperbound = haskey(para.regimes, :valuebounds) ? regime_valuebounds(para, regime) : para.valuebounds
+                        while !(lowerbound < prio < upperbound)
                             prio = rand(para.prior.value)
                         end
                         prio

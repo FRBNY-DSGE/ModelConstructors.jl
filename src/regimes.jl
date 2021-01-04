@@ -25,16 +25,19 @@ function set_regime_val!(p::Parameter{S},
         p.regimes[:value] = OrderedDict{Int,S}()
     end
 
+    # First check if fixed and enforce valuebounds so
+    # `set_regime_val!` mirrors `parameter(p::Parameter, newvalue::S)` functionality
     if haskey(p.regimes, :fixed) ? regime_fixed(p, i) : false
         if haskey(p.regimes[:value], i)
-            # @warn "Parameter $(p.key) is fixed - won't be changed" ## Commented out otherwise SMC output file very large
             return p.regimes[:value][i]
         else # If it doesn't exist yet, then we want to set the value for this regime
             p.regimes[:value][i] = v
             p.regimes[:valuebounds][i] = (v,v)
         end
-    elseif (haskey(p.regimes, :valuebounds) && length(p.regimes[:valuebounds]) >= i &&
-            p.regimes[:valuebounds][i][1] <= v <= p.regimes[:valuebounds][i][2]) || ((!haskey(p.regimes, :valuebounds) || length(p.regimes[:valuebounds]) < i) && p.valuebounds[1] <= v <= p.valuebounds[2]) || override_bounds
+    elseif (haskey(p.regimes, :valuebounds) ?
+            ((regime_valuebounds(p, i)[1] <= v <= regime_valuebounds(p, i)[2]) || override_bounds) : false)
+        p.regimes[:value][i] = v
+    elseif (p.valuebounds[1] <= v <= p.valuebounds[2]) || override_bounds
         p.regimes[:value][i] = v
     elseif p.fixed
         # When parameters are initialized as non-regime-switching and fixed,
@@ -159,7 +162,7 @@ maps each "model" regime to a "parameter" regime. In this way,
 the second method specifies which "parameter" regime should be used at a given
 "model" regime.
 """
-function set_regime_fixed!(p::Parameter, i::Int, v::S; update_valuebounds::Interval = (NaN,NaN)) where {S <: Bool}
+function set_regime_fixed!(p::Parameter{S1}, i::Int, v::S; update_valuebounds::Interval{S1} = (NaN, NaN)) where {S <: Bool, S1 <: Real}
     if !haskey(p.regimes, :fixed)
         p.regimes[:fixed] = OrderedDict{Int, Bool}()
     end
@@ -169,27 +172,22 @@ function set_regime_fixed!(p::Parameter, i::Int, v::S; update_valuebounds::Inter
         p.regimes[:valuebounds] = OrderedDict{Int, typeof(p.value)}()
     end
 
-    # Update valuebounds - same as the value if v is true. Otherwise, take argument or find reasonable bounds
-    ## if v is false. Note: we don't update valuebounds when v is true because it's unnecessry and messes up
-    ## calculations when calling the same parameter, regime with v = true and then v = false.
-
     if isnan(update_valuebounds[1]) || isnan(update_valuebounds[2])
-        if !haskey(p.regimes, :valuebounds) || !haskey(p.regimes[:valuebounds], i)
+        # Do nothing unless `v` is true (fixed in regime `i`) or
+        # !haskey(p.regimes[:valuebounds], i) (no value for regime `i` for valuebounds dict)
+        if v
+            if (haskey(p.regimes, :value) ? haskey(p.regimes[:value], i) : false)
+                # Regime is fixed, so valuebounds should be set to (value, value), if it exists
+                p.regimes[:valuebounds][i] = (regime_val(p, i), regime_val(p, i))
+            else
+                error("Regime $(i) for parameter $(p.key) does not have a value. Set the value " *
+                      "using `set_regime_value!` before making it a fixed value with `set_regime_fixed!`.")
+            end
+        elseif !haskey(p.regimes[:valuebounds], i)
+            # If valuebounds is nonexistent in regime i, initialize to p.valuebounds
             p.regimes[:valuebounds][i] = p.valuebounds
         end
-        if p.regimes[:valuebounds][i][1] == p.regimes[:valuebounds][i][2]
-            if p.valuebounds[1] != p.valuebounds[2]
-                p.regimes[:valuebounds][i] = p.valuebounds
-            else
-                for j in keys(p.regimes[:valuebounds])
-                    if p.regimes[:valuebounds][j][1] != p.regimes[:valuebounds][j][2]
-                        p.regimes[:valuebounds][i] = p.regimes[:valuebounds][j]
-                        break
-                    end
-                end
-            end
-        end
-    else
+    else # Otherwise update the valuebounds. Note that there is no check that p.regimes[:value][i] lies inside the valuebounds
         p.regimes[:valuebounds][i] = update_valuebounds
     end
 
@@ -197,7 +195,7 @@ function set_regime_fixed!(p::Parameter, i::Int, v::S; update_valuebounds::Inter
 end
 
 function set_regime_fixed!(p::Parameter, model_regime::Int, v::S,
-                           d::AbstractDict{Int, Int}; update_valuebounds::Interval = (NaN,NaN)) where {S <: Bool}
+                           d::AbstractDict{Int, Int}; update_valuebounds::Interval{S1} = (NaN, NaN)) where {S <: Bool, S1 <: Real}
     set_regime_fixed!(p, d[model_regime], v; update_valuebounds = update_valuebounds)
 end
 
