@@ -35,7 +35,7 @@ end
     p[1] = ModelConstructors.parameter(:a, 0.1, (0., 1.), (0., 1.), ModelConstructors.Untransformed(), Normal(0.5, 1.); fixed = false)
     p[2] = ModelConstructors.parameter(:b, 0., (0., 1.), (0., 1.), ModelConstructors.Untransformed(), Normal(0.5, 1.); fixed = true)
     p[3] = ModelConstructors.parameter(:c, 0.4, (0., 1.), (0., 1.), ModelConstructors.Untransformed(), Normal(0.25, 1.); fixed = false)
-    p3cop = ModelConstructors.parameter(:c, 0.5, (0., 1.), (0., 1.), ModelConstructors.Untransformed(), Normal(0.25, 1.); fixed = false)
+    p3copy = ModelConstructors.parameter(:c, 0.5, (0., 1.), (0., 1.), ModelConstructors.Untransformed(), Normal(0.25, 1.); fixed = false)
 
     # Set up parameter switching
     set_regime_val!(p[1], 1, 0.1) # test prior switching
@@ -44,13 +44,13 @@ end
     set_regime_prior!(p[1], 1, Normal(0.5, 1.))
     set_regime_prior!(p[1], 2, Normal(0.2, 1.))
     set_regime_prior!(p[1], 3, Normal(0.2, 1.))
-    set_regime_fixed!(p[2], 1, true) # test if :fixed is not in regimes, then fixed = true fixes the parameter
-    set_regime_fixed!(p[2], 2, true) # Need to add this info first so set_regime_val! works.
-    set_regime_val!(p[2], 1, 0.1)      # Alternatively, override_bounds could be used
-    set_regime_val!(p[2], 2, 0.2)
+    set_regime_val!(p[2], 1, 0.1; override_bounds = true)
+    set_regime_val!(p[2], 2, 0.2; override_bounds = true)
+    set_regime_fixed!(p[2], 1, true)
+    set_regime_fixed!(p[2], 2, true)
     @test set_regime_val!(p[2], 2, 0.2) == 0.2 # trying to reset a fixed value won't do anything
     @test regime_val(p[2], 2) == 0.2
-    set_regime_val!(p[3], 1, 0.4) # test if :fixed is in regimes and if there is no prior switching
+    set_regime_val!(p[3], 1, 0.4)
     set_regime_val!(p[3], 2, 0.5; override_bounds = true)
     set_regime_fixed!(p[3], 1, true)
     set_regime_fixed!(p[3], 2, false)
@@ -61,13 +61,12 @@ end
     set_regime_fixed!(p[3], 2, true)
     @test ModelConstructors._filter_all_fixed_para(p[3])
     set_regime_fixed!(p[3], 2, false)
+    set_regime_valuebounds!(p[3], 2, (0., 1.)) # set_regime_fixed!(p[3], 2, true) will change the valuebounds
 
-    @test prior(p) == sum([logpdf(p[1]), logpdf(p3cop)])
+    @test prior(p) == sum([logpdf(p[1]), logpdf(p3copy)])
 
     p_in = [0.2, 0.1, 0.5, 0.3, 0.9, 0.2, 0.6]
-    for para in p
-        toggle_regime!(para, 1)
-    end
+    toggle_regime!(p, 1)
     update!(p, p_in)
     p_out = [0.2, 0.1, 0.4, 0.3, 0.9, 0.2, 0.6]
     @test ModelConstructors.get_values(p) == p_out
