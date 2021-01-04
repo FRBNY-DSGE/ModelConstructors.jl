@@ -2,7 +2,7 @@ using Test, ModelConstructors
 
 u = parameter(:bloop, 2.5230, (1e-8, 5.), (1e-8, 5.), ModelConstructors.SquareRoot(); fixed = false)
 ModelConstructors.set_regime_val!(u, 1, 2.5230)
-# CURRENTLY ONLY TESTS VALUE, PRIOR, and FIXED SWITCHING, NO REGIME SWITCHING IN OTHER CASES
+# CURRENTLY ONLY TESTS VALUE, PRIOR, FIXED, AND VALUEBOUNDS SWITCHING, NO REGIME SWITCHING IN OTHER CASES
 @info "The following error 'get_regime_val(), Input Error: No regime 3' is expected."
 @testset "Regime switching with parameters" begin
     @test_throws ParamBoundsError ModelConstructors.set_regime_val!(u, 2, 0.)
@@ -43,6 +43,14 @@ ModelConstructors.set_regime_val!(u, 1, 2.5230)
 
     @test ModelConstructors.regime_fixed(u, 1)
     @test !ModelConstructors.regime_fixed(u, 2)
+
+    # test regime-switching value bounds
+    ModelConstructors.set_regime_valuebounds!(u, 1, (1e-6, 5.))
+    ModelConstructors.set_regime_valuebounds!(u, 2, (1e-7, 5.))
+    @test ModelConstructors.regime_valuebounds(u, 1) == (1e-6, 5.)
+    @test ModelConstructors.regime_valuebounds(u, 2) == (1e-7, 5.)
+
+    # test set_regime_fixed w/update_valuebounds
 end
 
 @testset "Regime switching with parameters when model regimes are different" begin
@@ -89,6 +97,19 @@ end
     @test !ModelConstructors.regime_fixed(u, 2)
     @test ModelConstructors.regime_fixed(u, 2, d)
     @test !ModelConstructors.regime_fixed(u, 3, d)
+
+    # test regime-switching value bounds
+    ModelConstructors.set_regime_valuebounds!(u, 2, (1e-6, 5.), d)
+    ModelConstructors.set_regime_valuebounds!(u, 3, (1e-7, 5.), d)
+    ModelConstructors.set_regime_valuebounds!(u, 4, (1e-8, 5.), d)
+    @test ModelConstructors.regime_valuebounds(u, 1) ==
+        ModelConstructors.regime_valuebounds(u, 2, d) == (1e-6, 5.)
+    @test ModelConstructors.regime_valuebounds(u, 2) ==
+        ModelConstructors.regime_valuebounds(u, 3, d) == (1e-7, 5.)
+    @test ModelConstructors.regime_valuebounds(u, 3) ==
+        ModelConstructors.regime_valuebounds(u, 4, d) == (1e-8, 5.)
+
+    # test set_regime_fixed w/update_valuebounds
 end
 
 nothing

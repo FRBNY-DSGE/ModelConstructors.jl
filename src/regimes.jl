@@ -1,6 +1,3 @@
-# DONE: regime-switching valuebounds, add keyword update_valuebounds for set_regime_fixed
-# to automatically create regime-switching valuebounds
-
 """
 ```
  set_regime_val!(p::Parameter{S},
@@ -222,7 +219,6 @@ end
 
 regime_fixed(p::Parameter{S}, model_regime::Int, d::AbstractDict{Int, Int}) where S <: Real = regime_fixed(p, d[model_regime])
 
-
 """
 ```
 set_regime_valuebounds!(p::Parameter{S}, i::Int, v::S)
@@ -239,7 +235,7 @@ maps each "model" regime to a "parameter" regime. In this way,
 the second method specifies which "parameter" regime should be used at a given
 "model" regime.
 """
-function set_regime_valuebounds!(p::Parameter, i::Int, v::S) where {S <: Tuple{Real,Real}}
+function set_regime_valuebounds!(p::Parameter, i::Int, v::Interval{S}) where {S <: Real}
     if !haskey(p.regimes, :valuebounds)
         p.regimes[:valuebounds] = OrderedDict{Int, typeof(p.value)}()
     end
@@ -248,10 +244,28 @@ function set_regime_valuebounds!(p::Parameter, i::Int, v::S) where {S <: Tuple{R
     return v
 end
 
-function set_regime_valuebounds!(p::Parameter, model_regime::Int, v::S,
-                           d::AbstractDict{Int, Int}) where {S <: Tuple{Real,Real}}
+function set_regime_valuebounds!(p::Parameter, model_regime::Int, v::Interval{S},
+                                 d::AbstractDict{Int, Int}) where {S <: Real}
     set_regime_valuebounds!(p, d[model_regime], v)
 end
+
+"""
+```
+regime_valuebounds(p::Parameter{S}, i::Int) where S <: Real
+regime_valuebounds(p::Parameter{S}, model_regime::Int, d::AbstractDict{Int, Int}) where S <: Real
+```
+
+returns the `valuebounds` of `p`  in regime `i` for the first method
+and the `valuebounds` of `p` in regime `d[model_regime]` for the second method.
+"""
+function regime_valuebounds(p::Parameter{S}, i::Int) where S <: Real
+    if !haskey(p.regimes, :valuebounds) || !haskey(p.regimes[:valuebounds], i)
+        @error "regime_valuebounds(), Input Error: No regime $(i)"
+    end
+    return p.regimes[:valuebounds][i]
+end
+
+regime_valuebounds(p::Parameter{S}, model_regime::Int, d::AbstractDict{Int, Int}) where S <: Real = regime_valuebounds(p, d[model_regime])
 
 """
 ```

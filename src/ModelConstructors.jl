@@ -57,7 +57,7 @@ module ModelConstructors
 
         # regimes.jl
         set_regime_val!, regime_val, set_regime_prior!, regime_prior, set_regime_fixed!, regime_fixed,
-        toggle_regime!,
+        set_regime_valuebounds!, regime_valuebounds, toggle_regime!,
 
         # statistics.jl
         prior, posterior, posterior!,
