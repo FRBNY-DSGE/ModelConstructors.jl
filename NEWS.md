@@ -1,3 +1,6 @@
+# ModelConstructors.jl v0.2.1
+- Raise compat bounds for some packages
+
 # ModelConstructors.jl v0.2.0
 - Restrict Julia version to at least 1.0
 - Add @unpack macro for accessing parameters of a model

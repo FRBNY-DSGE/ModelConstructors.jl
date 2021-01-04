@@ -1,7 +1,7 @@
 name = "ModelConstructors"
 uuid = "e47e5152-bd14-11e9-1b46-c951f0a7041d"
 authors = ["William Chen <william.chen@ny.frb.org>", "Shlok Goyal <shlok.goyal@ny.frb.org>", "Alissa Johnson <alissa.johnson@ny.rb.org"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
