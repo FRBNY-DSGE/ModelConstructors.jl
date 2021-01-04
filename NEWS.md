@@ -1,5 +1,8 @@
-# ModelConstructors.jl v0.1.13 (unreleased)
+# ModelConstructors.jl v0.2.0
+- Restrict Julia version to at least 1.0
 - Add @unpack macro for accessing parameters of a model
+- Extend regime-switching to allow switching in `prior`, `fixed`, and `valuebounds` fields.
+- Allow difference between the notion of "model regimes" and "parameter regimes" by specifying a dictionary which maps model regimes to parameter regimes.
 
 # ModelConstructors.jl v0.1.12 Release Notes
 - Update compatibility bounds
