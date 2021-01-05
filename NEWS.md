@@ -1,3 +1,7 @@
+# ModelConstructors.jl v0.2.2
+- Try to convert types to match rather than throwing a `MethodError` immediately
+  when calling `parameter`.
+
 # ModelConstructors.jl v0.2.1
 - Raise compat bounds for some packages
 
