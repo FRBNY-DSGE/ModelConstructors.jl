@@ -1,3 +1,6 @@
+# ModelConstructors.jl v0.2.4
+- Extend `transform_to_model_space` and `transform_to_real_line` for regime-switching parameters.
+
 # ModelConstructors.jl v0.2.3
 - Move methods for computing free and fixed indices of parameters from SMC.jl to ModelConstructors.jl
 
