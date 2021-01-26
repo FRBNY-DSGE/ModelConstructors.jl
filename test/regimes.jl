@@ -1,6 +1,7 @@
 using Test, ModelConstructors
 
 # CURRENTLY ONLY TESTS VALUE, PRIOR, FIXED, AND VALUEBOUNDS SWITCHING, NO REGIME SWITCHING IN OTHER CASES
+# ALSO TESTS IF TRANSFORMS WORK CORRECTLY WITH REGIME-SWITCHING
 
 @info "The following error 'get_regime_val(), Input Error: No regime 3' is expected."
 @testset "Regime switching with parameters" begin
@@ -67,6 +68,24 @@ using Test, ModelConstructors
     ModelConstructors.set_regime_fixed!(u, 2, false; update_valuebounds = (10., 11.))
     @test u.regimes[:valuebounds][1] == (10., 11.)
     @test u.regimes[:valuebounds][2] == (10., 11.)
+
+    # test transform_to_real_line
+    ModelConstructors.toggle_regime!(uvec, 1)
+    set_regime_val!(uvec[1], 2, 1.; override_bounds = true) # break the valuebounds for now
+    set_regime_val!(uvec[2], 2, 1.; override_bounds = true)
+    values = ModelConstructors.get_values(uvec)
+    real_vals_true = similar(values)
+    real_vals_true[1] = ModelConstructors.transform_to_real_line(uvec[1], uvec[1].regimes[:value][1])
+    real_vals_true[2] = ModelConstructors.transform_to_real_line(uvec[2], uvec[2].regimes[:value][1])
+    real_vals_true[3] = ModelConstructors.transform_to_real_line(uvec[1], uvec[1].regimes[:value][2])
+    real_vals_true[4] = ModelConstructors.transform_to_real_line(uvec[2], uvec[2].regimes[:value][2])
+    real_vals1 = transform_to_real_line(uvec; regime_switching = true)
+    real_vals2 = transform_to_real_line(uvec, values; regime_switching = true)
+    @test real_vals1 == real_vals2 == real_vals_true
+
+    # test transform_to_model_space
+    model_vals = transform_to_model_space(uvec, real_vals1; regime_switching = true)
+    @test model_vals == values
 end
 
 @testset "Regime switching with parameters when model regimes are different" begin

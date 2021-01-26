@@ -39,7 +39,19 @@ tomodel_answers[3] = 1.
             @test differentiate_transform_to_real_line(u,u.value) != differentiate_transform_to_model_space(u,u.value)
         end
     end
+end
 
+@testset "Check type conversion for `value`, `valuebounds`, and `transform_parameterization`" begin
+    @info "The following warning is expected"
+    u1 = parameter(:σ_pist, 2.5230, (1, 5), (Float32(1), Float32(5)), Untransformed())
+    u2 = parameter(:σ_pist, 2.5230, (1., 5.), (1., 5.), Untransformed())
+
+    @test u1.value == u2.value
+    @test u1.valuebounds == u2.valuebounds
+    @test u1.transform_parameterization == u2.transform_parameterization
+    @test typeof(u1.value) == typeof(u2.value)
+    @test eltype(u1.valuebounds) == eltype(u2.valuebounds)
+    @test eltype(u1.transform_parameterization) == eltype(u2.transform_parameterization)
 end
 
 # probability

@@ -1,3 +1,13 @@
+# ModelConstructors.jl v0.2.4
+- Extend `transform_to_model_space` and `transform_to_real_line` for regime-switching parameters.
+
+# ModelConstructors.jl v0.2.3
+- Move methods for computing free and fixed indices of parameters from SMC.jl to ModelConstructors.jl
+
+# ModelConstructors.jl v0.2.2
+- Try to convert types to match rather than throwing a `MethodError` immediately
+  when calling `parameter`.
+
 # ModelConstructors.jl v0.2.1
 - Raise compat bounds for some packages
 

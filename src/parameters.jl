@@ -387,7 +387,7 @@ function parameter(key::Symbol,
                    scaling::Function        = identity,
                    regimes::Dict{Symbol,OrderedDict{Int64,Any}} = Dict{Symbol,OrderedDict{Int64,Any}}(),
                    description::String = "No description available.",
-                   tex_label::String = "") where {V<:Vector, T <: Float64, U <:Transform} #{V<:Vector, S<:Real, T <: Float64, U <:Transform}
+                   tex_label::String = "") where {V<:Vector, T <: Real, U <:Transform} #{V<:Vector, S<:Real, T <: Float64, U <:Transform}
 
     # If fixed=true, force bounds to match and leave prior as null.  We need to define new
     # variable names here because of lexical scoping.
@@ -443,6 +443,32 @@ function parameter(key::Symbol,
                                             prior_new, fixed, scaling, regimes, description, tex_label)
         end
     end
+end
+
+function parameter(key::Symbol,
+                   value::Union{T1, V}, #value::Union{S,V},
+                   valuebounds::Interval{T2} = (value,value),
+                   transform_parameterization::Interval{T3} = (value,value),
+                   transform::U             = Untransformed(),
+                   prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
+                   fixed::Bool              = true,
+                   scaling::Function        = identity,
+                   regimes::Dict{Symbol,OrderedDict{Int64,Any}} = Dict{Symbol,OrderedDict{Int64,Any}}(),
+                   description::String = "No description available.",
+                   tex_label::String = "") where {V<:Vector, T1 <: Real, T2 <: Real, T3 <: Real, U <:Transform}
+    warn_str = "The element types of the fields `value` ($(typeof(value))), `valuebounds` ($(eltype(valuebounds))), " *
+        "and `transform_parameterization` ($(eltype(transform_parameterization))) do not match. " *
+        "Attempting to convert all types to the same type as `value`. Note that the element type for the prior " *
+        "distribution should also be $(typeof(value))."
+    @warn warn_str
+
+    valuebounds_new = (convert(T1, valuebounds[1]), convert(T1, valuebounds[2]))
+    transform_parameterization_new = (convert(T1, transform_parameterization[1]),
+                                      convert(T1, transform_parameterization[2]))
+
+    return parameter(key, value, valuebounds_new, transform_parameterization_new,
+                     transform, prior; fixed = fixed, scaling = scaling,
+                     regimes = regimes, description = description, tex_label = tex_label)
 end
 
 function parameter_ad(key::Symbol,
@@ -750,8 +776,60 @@ function transform_to_model_space(p::Parameter{T,Exponential}, x::T) where T
     a + exp(c*(x-b))
 end
 
-transform_to_model_space(pvec::ParameterVector{T}, values::Vector{T}) where T = map(transform_to_model_space, pvec, values)
-transform_to_model_space(pvec::ParameterVector, values::Vector{S}) where S = map(transform_to_model_space, pvec, values)
+@inline function transform_to_model_space(pvec::ParameterVector{T}, values::Vector{T};
+                                          regime_switching::Bool = false) where T
+    if regime_switching
+        # Transform values in the first regime
+        output = similar(values)
+        plen   = length(pvec)
+        map!(transform_to_model_space, output, pvec, values[1:plen])
+
+        # Now transform values in the second regime and on
+        i = 0
+        for p in pvec
+            if !isempty(p.regimes)
+                for (k, v) in p.regimes[:value]
+                    if k != 1  # Skip the first regime.
+                        i += 1 # `values` stores regime values (after the first regime) beside each other.
+                        output[plen + i] = transform_to_model_space(p, values[plen + i])
+                    end
+                end
+            end
+        end
+
+        return output
+    else
+        return map(transform_to_model_space, pvec, values)
+    end
+end
+
+@inline function transform_to_model_space(pvec::ParameterVector, values::Vector{S};
+                                          regime_switching::Bool = false) where S
+
+    if regime_switching
+        # Transform values in the first regime
+        output = similar(values)
+        plen   = length(pvec)
+        map!(transform_to_model_space, output, pvec, values[1:plen])
+
+        # Now transform values in the second regime and on
+        i = 0
+        for p in pvec
+            if !isempty(p.regimes)
+                for (k, v) in p.regimes[:value]
+                    if k != 1  # Skip the first regime.
+                        i += 1 # `values` stores regime values (after the first regime) beside each other.
+                        output[plen + i] = transform_to_model_space(p, values[plen + i])
+                    end
+                end
+            end
+        end
+
+        return output
+    else
+        return map(transform_to_model_space, pvec, values)
+    end
+end
 
 """
 ```
@@ -837,8 +915,57 @@ function transform_to_real_line(p::Parameter{T,Exponential}, x::T = p.value) whe
     b + (1 ./ c) * log(x-a)
 end
 
-transform_to_real_line(pvec::ParameterVector{T}, values::Vector{T}) where T  = map(transform_to_real_line, pvec, values)
-transform_to_real_line(pvec::ParameterVector{T}) where T = map(transform_to_real_line, pvec)
+@inline function transform_to_real_line(pvec::ParameterVector{T}, values::Vector{T}; regime_switching::Bool = false) where T
+    if regime_switching
+        # Transform values in the first regime
+        output = similar(values)
+        plen   = length(pvec)
+        map!(transform_to_real_line, output, pvec, values[1:plen])
+
+        # Now transform values in the second regime and on
+        i = 0
+        for p in pvec
+            if !isempty(p.regimes)
+                for (k, v) in p.regimes[:value]
+                    if k != 1  # Skip the first regime.
+                        i += 1 # `values` stores regime values (after the first regime) beside each other.
+                        output[plen + i] = transform_to_real_line(p, values[plen + i])
+                    end
+                end
+            end
+        end
+
+        return output
+    else
+        map(transform_to_real_line, pvec, values)
+    end
+end
+@inline function transform_to_real_line(pvec::ParameterVector{T}; regime_switching::Bool = false) where T
+    if regime_switching
+        values = get_values(pvec) # regime-switching parameters returned by default
+
+        # Transform values in the first regime
+        plen = length(pvec) # since values is not passed, we can mutate values directly to avoid extra allocations
+        map!(transform_to_real_line, (@view values[1:plen]), pvec, values[1:plen])
+
+        # Now transform values in the second regime and on
+        i = 0
+        for p in pvec
+            if !isempty(p.regimes)
+                for (k, v) in p.regimes[:value]
+                    if k != 1  # Skip the first regime.
+                        i += 1 # `values` stores regime values (after the first regime) beside each other.
+                        values[plen + i] = transform_to_real_line(p, values[plen + i])
+                    end
+                end
+            end
+        end
+
+        return values
+    else
+        map(transform_to_real_line, pvec)
+    end
+end
 
 """
 ```

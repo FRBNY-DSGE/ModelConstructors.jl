@@ -30,5 +30,7 @@ Developers of this package at the
 [New York Fed](https://www.newyorkfed.org/research) include
 
 * [William Chen](https://github.com/chenwilliam77)
+* [Shlok Goyal](https://github.com/ShlokG)
+* [Alissa Johnson](https://github.com/alissarjohnson)
 * [Ethan Matlin](https://github.com/ethanmatlin)
 * [Reca Sarfati](https://github.com/rsarfati)
