@@ -338,7 +338,9 @@ toggle_regime!(p::Parameter{S}, model_regime::Int, d::AbstractDict{Int, Int}) wh
 
 function toggle_regime!(pvec::ParameterVector{S}, model_regime::Int, d::AbstractDict{Symbol, <: AbstractDict{Int, Int}}) where S <: Real
     for p in pvec
-        toggle_regime!(p, model_regime, d[p.key])
+        if haskey(d, p.key)
+            toggle_regime!(p, model_regime, d[p.key])
+        end
     end
 end
 
