@@ -360,7 +360,7 @@ function get_values(pvec::ParameterVector{S}; regime_switching::Bool = true) whe
         np_reg = n_parameters_regime_switching(pvec)
         np     = length(pvec)
         if np == np_reg # No regime-switching
-            vals = [x.value for x in pvec.parameters]
+            vals = [x.value for x in pvec]
         else
             vals = Vector{S}(undef, np_reg)
 
