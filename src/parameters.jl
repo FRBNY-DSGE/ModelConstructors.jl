@@ -1130,13 +1130,12 @@ update!(pvec::ParameterVector, values::Vector{S}; change_value_type::Bool = fals
 ```
 
 Update all parameters in `pvec` that are not fixed with
-`values`. Length of `values` must equal length of `pvec`.
+`values`. Length of `values` does not need equal length of `pvec` (as in the case of regime-switching parameters).
 Function optimized for speed.
 """
 function update!(pvec::ParameterVector, values::Vector{T};
                  change_value_type::Bool = false) where T
     # this function is optimised for speed
- #   @assert length(values) == length(pvec) "Length of input vector (=$(length(values))) must match length of parameter vector (=$(length(pvec)))"
     if change_value_type
         tmp = if eltype(pvec) <: ParameterAD
             (x,y) -> parameter_ad(x, y; change_value_type = change_value_type)
