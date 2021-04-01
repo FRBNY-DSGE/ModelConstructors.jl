@@ -884,7 +884,7 @@ function transform_to_real_line(p::ParameterAD{S,<:Number,SquareRoot}, x::S = p.
         println("b is $b")
         println("x is $x")
         println("cx is $cx")
-        error("invalid paramter value")
+        error("invalid parameter value")
     end
     (1/c)*cx/sqrt(1 - cx^2)
 end
@@ -1126,14 +1126,14 @@ Base.iterate(p::Parameter, state=1) = state > length(p.value) ? nothing : (state
 
 """
 ```
-update!(pvec::ParameterVector, values::Vector{S}; change_value_type::Bool = false) where S
+update!(pvec::ParameterVector, values::AbstractVector{S}; change_value_type::Bool = false) where S
 ```
 
 Update all parameters in `pvec` that are not fixed with
 `values`. Length of `values` does not need equal length of `pvec` (as in the case of regime-switching parameters).
 Function optimized for speed.
 """
-function update!(pvec::ParameterVector, values::Vector{T};
+function update!(pvec::ParameterVector, values::AbstractVector{T};
                  change_value_type::Bool = false) where T
     # this function is optimised for speed
     if change_value_type
@@ -1177,7 +1177,7 @@ end
 
 """
 ```
-update!(pvec::ParameterVector, values::Vector{S},
+update!(pvec::ParameterVector, values::AbstractVector{S},
     indices::BitArray{1}; change_value_type::Bool = false) where S
 ```
 
@@ -1254,7 +1254,7 @@ equal length of `pvec`.
 
 We define the non-mutating version like this because we need the type stability of map!
 """
-function update(pvec::ParameterVector, values::Vector{S}) where S
+function update(pvec::ParameterVector, values::AbstractVector{S}) where S
     tmp = copy(pvec)
     update!(tmp, values)
     return tmp
@@ -1320,7 +1320,7 @@ Distributions.rand(p::Vector{AbstractParameter{Float64}}; regime_switching::Bool
 
 Generate a draw from the prior of each parameter in `p`.
 """
-function Distributions.rand(p::Vector{AbstractParameter{Float64}}; regime_switching::Bool = false,
+function Distributions.rand(p::AbstractVector{AbstractParameter{Float64}}; regime_switching::Bool = false,
                             toggle::Bool = true)
 
     if regime_switching
@@ -1350,7 +1350,7 @@ rand_regime_switching(p::Vector{AbstractParameter{Float64}}; toggle::Bool = true
 
 Generate a draw from the prior of each parameter in `p`.
 """
-function rand_regime_switching(p::Vector{AbstractParameter{Float64}}; toggle::Bool = true)
+function rand_regime_switching(p::AbstractVector{AbstractParameter{Float64}}; toggle::Bool = true)
     draw = zeros(length(p))
 
     # Handle the regime 1 values

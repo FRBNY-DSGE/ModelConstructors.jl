@@ -1,3 +1,6 @@
+# ModelConstructors.jl v0.2.5
+- Fix bug in `get_values` when using regime-switching parameters
+
 # ModelConstructors.jl v0.2.4
 - Extend `transform_to_model_space` and `transform_to_real_line` for regime-switching parameters.
 
