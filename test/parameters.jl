@@ -120,6 +120,7 @@ end
     @test α.description == "No description available."
     @test α.tex_label == ""
     @test isa(α.transform, ModelConstructors.SquareRoot)
+    @test get_untransformed_values(α) == α.value
 end
 
 # UnscaledParameter, fixed = true
@@ -127,6 +128,7 @@ end
 @testset "Test fixed UnscaledParameter" begin
     @test α_fixed.transform_parameterization == (0.1596,0.1596)
     @test isa(α_fixed.transform, ModelConstructors.Untransformed)
+    @test get_untransformed_values(α_fixed) == α_fixed.value
 end
 
 # UnscaledParameter, fixed = true, transform should be overwritten given fixed
@@ -151,6 +153,7 @@ end
     @test isa(β, ScaledParameter)
     @test isa(β.prior.value, Gamma)
     @test isa(β.transform, ModelConstructors.Exponential)
+    @test get_untransformed_values(β) == β.scaledvalue
 end
 
 # Invalid transform

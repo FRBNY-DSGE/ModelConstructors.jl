@@ -45,7 +45,7 @@ module ModelConstructors
         differentiate_transform_to_real_line, differentiate_transform_to_model_space,
         update, update!, transform_to_model_space, transform_to_real_line, Interval,
         ParamBoundsError, Untransformed, SquareRoot, moments,
-        prior,
+        prior, get_untransformed_values,
 
         # distributions_ext.jl
         Uniform, Exponential, Normal, BetaAlt, GammaAlt, RootInverseGamma, pdf, logpdf, rand,

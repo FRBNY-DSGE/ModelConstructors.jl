@@ -1513,3 +1513,15 @@ function parameters2namedtuple(pvec::AbstractVector{S}) where {S <: AbstractPara
     tuple_vals = [(isa(p, ScaledParameter) ? p.scaledvalue : p.value) for p in pvec]
     return NamedTuple{tuple_names}(tuple_vals)
 end
+
+"""
+```
+get_untransformed_values(p::AbstractParameter)
+```
+returns the untransformed values that are used in mathematical operations.
+The main use case is returning the `scaledvalue` if
+`p` is a `ScaledParameter` and `value` if it is an `UnscaledParameter`.
+"""
+get_untransformed_values(p::AbstractParameter) = p.value
+get_untransformed_values(p::ScaledParameter) = p.scaledvalue
+get_untransformed_values(pvec::ParameterVector) = [untransformed_values(p) for p in pvec]
