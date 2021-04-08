@@ -1498,22 +1498,6 @@ function n_parameters_regime_switching(p::ParameterVector)
     return base_num
 end
 
-
-"""
-```
-parameters2namedtuple(m)
-```
-
-returns the parameters of `m` as a `NamedTuple`. The input `m`
-can be either an `AbstractVector{<: AbstractParameter}` or
-an `AbstractModel`.
-"""
-function parameters2namedtuple(pvec::AbstractVector{S}) where {S <: AbstractParameter}
-    tuple_names = Tuple(p.key for p in pvec)
-    tuple_vals = [(isa(p, ScaledParameter) ? p.scaledvalue : p.value) for p in pvec]
-    return NamedTuple{tuple_names}(tuple_vals)
-end
-
 """
 ```
 get_untransformed_values(p::AbstractParameter)
@@ -1525,3 +1509,17 @@ The main use case is returning the `scaledvalue` if
 get_untransformed_values(p::AbstractParameter) = p.value
 get_untransformed_values(p::ScaledParameter) = p.scaledvalue
 get_untransformed_values(pvec::ParameterVector) = [untransformed_values(p) for p in pvec]
+
+"""
+```
+parameters2namedtuple(m)
+```
+returns the parameters of `m` as a `NamedTuple`. The input `m`
+e acan be either an `AbstractVector{<: AbstractParameter}` or
+an `AbstractModel`.
+"""
+function parameters2namedtuple(pvec::AbstractVector{S}) where {S <: AbstractParameter}
+    tuple_names = Tuple(p.key for p in pvec)
+    tuple_vals = [get_untransformed_values(p) for p in pvec]
+    return NamedTuple{tuple_names}(tuple_vals)
+end
