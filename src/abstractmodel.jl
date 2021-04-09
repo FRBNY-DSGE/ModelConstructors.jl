@@ -519,4 +519,6 @@ function parameters2namedtuple(m::AbstractModel)
 end
 
 # Broadcasting for parameters
-Base.broadcastable(p::AbstractParameter) = Ref(p)
+## Could also set to Ref(p) if ndims(get_untransformed_values(p)) <= 1
+## and to get_untransformed_values(p) otherwise
+Base.broadcastable(p::AbstractParameter) = get_untransformed_values(p)
