@@ -27,14 +27,14 @@ function set_regime_val!(p::Parameter{S},
 
     # First check if fixed and enforce valuebounds so
     # `set_regime_val!` mirrors `parameter(p::Parameter, newvalue::S)` functionality
-    if haskey(p.regimes, :fixed) ? regime_fixed(p, i) : false
+    if haskey(p.regimes, :fixed) && haskey(p.regimes[:fixed], i) ? regime_fixed(p, i) : false
         if haskey(p.regimes[:value], i)
             return p.regimes[:value][i]
         else # If it doesn't exist yet, then we want to set the value for this regime
             p.regimes[:value][i] = v
             p.regimes[:valuebounds][i] = (v, v)
         end
-    elseif (haskey(p.regimes, :valuebounds) ?
+    elseif (haskey(p.regimes, :valuebounds) && haskey(p.regimes[:valuebounds], i) ?
             ((regime_valuebounds(p, i)[1] <= v <= regime_valuebounds(p, i)[2]) || override_bounds) : false)
         p.regimes[:value][i] = v
     elseif (p.valuebounds[1] <= v <= p.valuebounds[2]) || override_bounds
