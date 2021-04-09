@@ -1,4 +1,4 @@
-using Test, ModelConstructors, Distributions, Dates, Nullables
+using Test, ModelConstructors, Distributions, Dates, Nullables, Random
 
 @testset "Ensure transformations to the real line/model space are valid" begin
     for T in subtypes(Transform)
@@ -207,6 +207,24 @@ end
     global vals = [2., 2.]
     update!(pvec, vals, BitArray([true, false, true]))
     @test map(x -> x.value, pvec) == [1., 1., 1.]
+end
+
+@testset "Broadcasting with Parameter types" begin
+    a = parameter(:a, 1., (0., 1.), (0., 1.), Untransformed(), fixed = false)
+    b = parameter(:b, 1., (0., 1.), (0., 1.), Untransformed(), fixed = false, scaling = x -> x / 100.)
+
+    rand_vals = rand(3)
+    p=SteadyStateParameterGrid(:sspg, rand(3))
+    p2=SteadyStateParameterGrid(:sspg, rand(3,2))
+    rand1 = rand()
+
+    @test a .* ones(3) == a.value * ones(3)
+    @test a .* rand_vals == a.value * rand_vals
+    @test b .* ones(3) == b.scaledvalue * ones(3)
+    @test b .* rand_vals == b.scaledvalue * rand_vals
+    @test p .* 1 == p.value
+    @test p .* rand1 == p.value .* rand1
+    @test p .* rand_vals == p.value .* rand_vals
 end
 
 nothing
