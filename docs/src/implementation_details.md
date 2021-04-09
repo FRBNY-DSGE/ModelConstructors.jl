@@ -38,8 +38,8 @@ for likelihood computation and estimation.
 Though all parameters are time-invariant, they can have different features.
 Some parameters are scaled for use when solving the model[^1] and
 constructing the model's measurement equations[^2].
-**Currently, you cannot use broadcasting on
-any concrete subtype of `AbstractParameter`**
+You can also use broadcasting for elementary mathematical
+operations (e.g. multiplication, addition) on any concrete subtype of `AbstractParameter`.
 
 During optimization, parameters may be transformed from
 model space to the real line via one of three different transformations: `Untransformed`,
