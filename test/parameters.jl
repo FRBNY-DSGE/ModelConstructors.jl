@@ -225,6 +225,13 @@ end
     @test p .* 1 == p.value
     @test p .* rand1 == p.value .* rand1
     @test p .* rand_vals == p.value .* rand_vals
+    @test a .* ones(3) == a.value * ones(3)
+    @test a .+ rand_vals == a.value .+ rand_vals
+    @test b .+ ones(3) == b.scaledvalue .+ ones(3)
+    @test b .+ rand_vals == b.scaledvalue .+ rand_vals
+    @test p .+ 1 == p.value .+ 1.
+    @test p .+ rand1 == p.value .+ rand1
+    @test p .+ rand_vals == p.value + rand_vals
 end
 
 nothing
