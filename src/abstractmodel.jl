@@ -517,3 +517,6 @@ end
 function parameters2namedtuple(m::AbstractModel)
     return parameters2namedtuple(get_parameters(m))
 end
+
+# Broadcasting for parameters
+Base.broadcastable(p::AbstractParameter) = Ref(p)
