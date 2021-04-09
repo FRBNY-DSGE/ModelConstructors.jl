@@ -1505,6 +1505,8 @@ get_untransformed_values(p::AbstractParameter)
 returns the untransformed values that are used in mathematical operations.
 The main use case is returning the `scaledvalue` if
 `p` is a `ScaledParameter` and `value` if it is an `UnscaledParameter`.
+
+This function currently does not work with regime-switching parameters.
 """
 get_untransformed_values(p::AbstractParameter) = p.value
 get_untransformed_values(p::ScaledParameter) = p.scaledvalue
@@ -1517,6 +1519,8 @@ parameters2namedtuple(m)
 returns the parameters of `m` as a `NamedTuple`. The input `m`
 e acan be either an `AbstractVector{<: AbstractParameter}` or
 an `AbstractModel`.
+
+This function currently does not work with regime-switching parameters.
 """
 function parameters2namedtuple(pvec::AbstractVector{S}) where {S <: AbstractParameter}
     tuple_names = Tuple(p.key for p in pvec)
