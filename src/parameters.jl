@@ -1507,6 +1507,18 @@ The main use case is returning the `scaledvalue` if
 `p` is a `ScaledParameter` and `value` if it is an `UnscaledParameter`.
 
 This function currently does not work with regime-switching parameters.
+
+Additionally, note that unless `p.value` is a concrete subtype of `AbstractArray` or
+some other type such that `p.value` is just a reference, then it is advisable
+to avoid using `get_untransformed_values` when possible. The reason is that
+`p.value` creates an extra allocation when `p.value` is not a reference.
+For example, if `p = parameter(:a, 1.0)`, then `p.value` creates 1 allocation,
+hence `get_untransformed_values(p)` creates 1 allocation.
+This behavior means that while `p * p` creates 1 allocation,
+`get_untransformed_values(p) * get_untransformed_values(p)` creates 3 allocations.
+If `get_untransformd_values` is called many times, then these additional allocations
+can add some extra time to the computations. For example, `p.value * rand(1e7)`
+versus `p * rand(1e7)` can result in 10 additional microseconds.
 """
 get_untransformed_values(p::AbstractParameter) = p.value
 get_untransformed_values(p::ScaledParameter) = p.scaledvalue
@@ -1527,3 +1539,11 @@ function parameters2namedtuple(pvec::AbstractVector{S}) where {S <: AbstractPara
     tuple_vals = [get_untransformed_values(p) for p in pvec]
     return NamedTuple{tuple_names}(tuple_vals)
 end
+
+# Broadcasting for parameters
+
+# still makes an allocation like get_untransformed_values(p) is not a reference to an Array but is faster
+Base.broadcastable(p::AbstractParameter) = Ref(p)
+
+# this returns a reference to an Array so no allocations
+Base.broadcastable(p::SteadyStateParameterGrid) = get_untransformed_values(p)
