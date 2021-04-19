@@ -277,6 +277,9 @@ mutable struct SteadyStateParameterGrid{T} <: AbstractParameter{T}
     tex_label::String
 end
 
+iterate(p::SteadyStateParameterGrid) = iterate(p.value)
+iterate(p::SteadyStateParameterGrid, i::Int) = iterate(p.value, i)
+
 function SteadyStateParameterGrid(key::Symbol,
                                   value::Array{T};
                                   description::String = "No description available",
@@ -312,6 +315,8 @@ mutable struct SteadyStateParameterArray{T} <: AbstractParameter{T}
     description::String
     tex_label::String
 end
+
+iterate(p::SteadyStateParameterArray) = iterate(p.value)
 
 """
 ```
