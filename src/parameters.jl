@@ -279,6 +279,8 @@ end
 
 iterate(p::SteadyStateParameterGrid) = iterate(p.value)
 iterate(p::SteadyStateParameterGrid, i::Int) = iterate(p.value, i)
+size(p::SteadyStateParameterGrid) = size(p.value)
+size(p::SteadyStateParameterGrid, args) = size(p.value, args)
 
 function SteadyStateParameterGrid(key::Symbol,
                                   value::Array{T};

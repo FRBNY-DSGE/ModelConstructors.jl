@@ -6,7 +6,7 @@ module ModelConstructors
     using ForwardDiff, Nullables, Printf, Random
     using LinearAlgebra, OrderedCollections, SpecialFunctions
 
-    import Base.isempty, Base.<, Base.min, Base.max, Base.length
+    import Base.isempty, Base.<, Base.min, Base.max, Base.length, Base.iterate, Base.size
     import Distributions.log2π, Distributions.params, Distributions.mean, Distributions.std
     import Distributions.pdf, Distributions.logpdf, Distributions.Distribution
     import Distributions.rand, Distributions.Matrixvariate, Distributions.LinearAlgebra

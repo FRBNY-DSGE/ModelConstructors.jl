@@ -2,6 +2,7 @@
 - Fix bug in `get_values` when using regime-switching parameters
 - Add `get_untransformed_values` to obtain the untransformed values of parameters.
 - Implement broadcasting for elementary math operations (e.g. addition, multiplication)
+- Allow calling `iterate` and `size` on `SteadyStateParameterGrid` types.
 
 # ModelConstructors.jl v0.2.4
 - Extend `transform_to_model_space` and `transform_to_real_line` for regime-switching parameters.
