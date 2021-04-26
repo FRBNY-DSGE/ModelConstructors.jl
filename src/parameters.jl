@@ -1392,10 +1392,10 @@ function rand_regime_switching(p::AbstractVector{AbstractParameter{Float64}}; to
                         regime_val(para, regime)
                     elseif (haskey(para.regimes, :prior) ? haskey(para.regimes[:prior], regime) : false) # regime-switching in prior
                         # Resample until all prior draws are within the value bounds
-                        prio = rand(regime_prior(para, regime).value)
+                        prio = rand(get(regime_prior(para, regime)))
                         lowerbound, upperbound = haskey(para.regimes, :valuebounds) ? regime_valuebounds(para, regime) : para.valuebounds
                         while !(lowerbound < prio < upperbound)
-                            prio = rand(regime_prior(para, regime).value)
+                            prio = rand(get(regime_prior(para, regime)))
                         end
                         prio
                     else # just use para.prior for prior draws
