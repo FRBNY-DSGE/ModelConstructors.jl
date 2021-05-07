@@ -250,7 +250,7 @@ end
 
 """
 ```
-SteadyStateValueGrid{T} <: AbstractParameter{T}
+SteadyStateParameterGrid{T} <: AbstractParameter{T}
 ```
 
 Steady-state model parameter grid (for heterogeneous agent models) whose value is calculated by an
@@ -282,6 +282,8 @@ iterate(p::SteadyStateParameterGrid, i::Int) = iterate(p.value, i)
 size(p::SteadyStateParameterGrid) = size(p.value)
 size(p::SteadyStateParameterGrid, dims) = size(p.value, dims)
 sum(p::SteadyStateParameterGrid; dims = nothing) = isnothing(dims) ? sum(p.value) : sum(p.value; dims = dims)
+getindex(p::SteadyStateParameterGrid, i) = getindex(p.value, i)
+-(p::SteadyStateParameterGrid) = -p.value
 
 function SteadyStateParameterGrid(key::Symbol,
                                   value::Array{T};

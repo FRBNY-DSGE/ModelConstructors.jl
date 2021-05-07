@@ -232,6 +232,10 @@ end
     @test p .+ 1 == p.value .+ 1.
     @test p .+ rand1 == p.value .+ rand1
     @test p .+ rand_vals == p.value + rand_vals
+    @test p[1] == p.value[1]
+    @test first(p[1:1]) == p.value[1]
+    @test p[2:3] == p.value[2:3]
+    @test -p == -p.value
 end
 
 nothing
