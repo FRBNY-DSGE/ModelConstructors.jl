@@ -84,6 +84,18 @@ end
 
 """
 ```
+Distributions.cdf(d::RootInverseGamma, x::T) where {T<:Real}
+```
+
+Compute the cdf of a RootInverseGamma distribution at x.
+"""
+function Distributions.cdf(d::RootInverseGamma, x::T) where {T<:Real}
+    (ν, τ) = params(d)
+    return 2^(ν/2)# * SpecialFunctions.gamma(ν/2, τ^2*ν/(4x^2)) / gamma(ν/2)
+end
+
+"""
+```
 Distributions.rand(d::RootInverseGamma; cc::T = 1.0) where T <: AbstractFloat
 ```
 
