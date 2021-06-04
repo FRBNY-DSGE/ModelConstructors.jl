@@ -1479,6 +1479,19 @@ function moments(θ::Parameter)
     end
 end
 
+function moments(θ::Parameter, regime::Int64)
+    if θ.fixed
+        return θ.regimes[:value][regime]
+    else
+        prior = get(θ.regimes[:prior][regime])
+        if isa(prior, RootInverseGamma)
+            return prior.τ, prior.ν
+        else
+            return mean(prior), std(prior)
+        end
+    end
+end
+
 function describe_prior(param::Parameter)
     if param.fixed
         return "fixed at " * string(param.value)
