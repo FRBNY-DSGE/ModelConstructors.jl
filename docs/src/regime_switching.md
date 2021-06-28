@@ -82,8 +82,15 @@ between model and parameter regimes.
 To specify this relationship, we utilize an `AbstractDict{Int, Int}`
 whose keys are the regimes of the model and values are the regimes
 of the parameters. When toggling between regimes,
-the user uses the syntax `toggle_regime!(p::Parameter, model_regime::Int, d::AbstractDict{Int, Int})`
-instead of `toggle_regime!(p::Parameter, para_regime::Int)`. For example, suppose
+the user uses the syntax
+```
+toggle_regime!(p::Parameter, model_regime::Int, d::AbstractDict{Int, Int})
+```
+instead of
+```
+toggle_regime!(p::Parameter, para_regime::Int)
+```
+For example, suppose
 that the model has 5 regimes, where regimes 1-3 match the parameter regimes,
 and regimes 4-6 have the same parameters as regime 1.
 We can implement such a specification as follows:
