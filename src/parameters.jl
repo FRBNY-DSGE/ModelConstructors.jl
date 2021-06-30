@@ -1009,7 +1009,7 @@ end
 differentiate_transform_to_real_line(pvec::ParameterVector, values::Vector{S}) where S = map(differentiate_transform_to_real_line, pvec, values)
 differentiate_transform_to_real_line(pvec::ParameterVector{S}) where S = map(differentiate_transform_to_real_line, pvec)
 
-# define operators to work on parameters
+# define operators to work on parameters and parameter_ad
 
 Base.convert(::Type{T}, p::UnscaledParameter) where {T<:Real}     = convert(T,p.value)
 Base.convert(::Type{T}, p::UnscaledVectorParameter) where {T <: Vector}     = convert(T,p.value)
@@ -1019,6 +1019,11 @@ Base.convert(::Type{T}, p::ScaledVectorParameter) where {T <: Vector}       = co
 Base.convert(::Type{T}, p::SteadyStateParameter) where {T<:Real}  = convert(T,p.value)
 Base.convert(::Type{ForwardDiff.Dual{T,V,N}}, p::UnscaledParameter) where {T,V,N} = convert(V,p.value)
 Base.convert(::Type{ForwardDiff.Dual{T,V,N}}, p::ScaledParameter) where {T,V,N} = convert(V,p.scaledvalue)
+
+Base.convert(::Type{T}, p::UnscaledParameterAD) where {T<:Real}     = convert(T,p.value)
+Base.convert(::Type{T}, p::ScaledParameterAD) where {T<:Real}       = convert(T,p.scaledvalue)
+Base.convert(::Type{ForwardDiff.Dual{T,V,N}}, p::UnscaledParameterAD) where {T,V,N} = convert(V,p.value)
+Base.convert(::Type{ForwardDiff.Dual{T,V,N}}, p::ScaledParameterAD) where {T,V,N} = convert(V,p.scaledvalue)
 
 Base.promote_rule(::Type{AbstractParameter{T}}, ::Type{U}) where {T<:Real, U<:Number} = promote_rule(T,U)
 Base.promote_rule(::Type{AbstractVectorParameter{T}}, ::Type{U}) where {T<:Vector, U<:Vector} = promote_rule(T,U)
