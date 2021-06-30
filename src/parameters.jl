@@ -1147,14 +1147,14 @@ function update!(pvec::ParameterVector, values::AbstractVector{T};
                  change_value_type::Bool = false) where T
     # this function is optimised for speed
     if change_value_type
-        tmp = if eltype(pvec) <: ParameterAD
+        tmp = if typeof(pvec[1]) <: ParameterAD
             (x,y) -> parameter_ad(x, y; change_value_type = change_value_type)
         else
             (x,y) -> parameter(x, y; change_value_type = change_value_type)
         end
         map!(tmp, pvec, pvec, values)
     else
-        if eltype(pvec) <: ParameterAD
+        if typeof(pvec[1]) <: ParameterAD
             map!(parameter_ad, pvec, pvec, values[1:length(pvec)])
         else
             map!(parameter, pvec, pvec, values[1:length(pvec)])
