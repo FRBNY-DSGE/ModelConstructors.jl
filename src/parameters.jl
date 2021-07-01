@@ -1150,6 +1150,17 @@ Function optimized for speed.
 """
 function update!(pvec::ParameterVector, values::AbstractVector{T};
                  change_value_type::Bool = false) where T
+    # TODO: move the ParameterAD part of this function to its own update!
+    #       e.g. `update!(pvec::AbstractVector{AbstractParameterAD}, values::AbstractVector{T};
+    #                     change_value_type::Bool = false) where T
+    #       so that we don't have to use the following code's assumption that
+    #       the first element of `pvec` is a `ParameterAD` and instead can use
+    #       use multiple dispatch to get it to work.
+    #       However, to make this work, whenever you have a model
+    #       whose parameters you want to autodiff with respect to,
+    #       then you need to explicitly declare a `Vector{AbstractParameterAD}`
+    #       rather than just a `ParameterVector`
+
     # this function is optimised for speed
     if change_value_type
         tmp = if typeof(pvec[1]) <: ParameterAD
