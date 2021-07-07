@@ -27,6 +27,7 @@ function prior(parameters::ParameterVector, x::AbstractVector{T};
         free_params = parameters
         free_x      = x
     else
+        unfixed     = map(θ -> !θ.fixed, parameters)
         free_params = Base.filter(x -> !_filter_all_fixed_para(x), parameters)
         free_x      = x[unfixed]
     end
