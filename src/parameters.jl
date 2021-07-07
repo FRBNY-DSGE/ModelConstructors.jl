@@ -358,7 +358,7 @@ NullableOrPriorMultivariate = Union{NullablePriorMultivariate, ContinuousMultiva
 
 # We want to use value field from UnscaledParameters and
 # SteadyStateParameters in computation, so we alias their union here.
-UnscaledOrSteadyState = Union{UnscaledParameter, SteadyStateParameter}
+UnscaledOrSteadyState = Union{UnscaledParameter, UnscaledParameterAD, SteadyStateParameter}
 
 """
 ```
