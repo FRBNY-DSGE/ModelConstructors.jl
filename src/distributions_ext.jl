@@ -178,7 +178,27 @@ Distributions.rand(d::DegenerateMvNormal; cc::T = 1.0) where T<:AbstractFloat
 Generate a draw from `d` with variance optionally scaled by `cc^2`.
 """
 function Distributions.rand(d::DegenerateMvNormal; cc::T = 1.0) where T<:AbstractFloat
-    return d.μ + cc*d.σ*randn(length(d))
+    # abusing notation slightly, if Y is a degen MV normal r.v. with covariance matrix Σ,
+    # and Σ = U Λ^2 Vt according to the svd, then given an standard MV normal r.v X with
+    # the same dimension as Y, Y = μ + UΛX.
+
+    # we need to ensure symmetry when computing SVD
+    U, λ_vals, Vt = svd((d.σ + d.σ')./2)
+
+    # set near-zero values to zero
+    λ_vals[λ_vals .< 10^(-6)] .= 0
+
+    # leave x as 0 where λ_vals equals 0 (b/c r.v. is fixed where λ_vals = 0)
+    λ_vals = abs.(λ_vals)
+    x = zeros(length(λ_vals))
+    for i in 1:length(λ_vals)
+        if λ_vals[i] == 0
+            x[i] = 0
+        else
+            x[i] = randn()
+        end
+    end
+    return d.μ + cc*U*diagm(sqrt.(λ_vals))*x
 end
 
 """
