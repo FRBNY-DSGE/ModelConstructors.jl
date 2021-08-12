@@ -123,14 +123,9 @@ function DegenerateMvNormal(μ::Vector, σ::Matrix; stdev::Bool = true)
         return DegenerateMvNormal(μ, σ, Matrix{eltype(μ)}(undef,0,0), Vector{eltype(μ)}(undef,0),
                                   false, Matrix{eltype(μ)}(undef,0,0))
     else
-        Σ = σ
-        U, λ_sq_vals, Vt = svd((Σ + Σ')/2)
-
-        λ_sq_vals[λ_sq_vals .< 10^(-6)] .= 0
-        λ_vals = sqrt.(abs.(λ_sq_vals))
-        return DegenerateMvNormal(μ, U * diagm(λ_vals),
+        return DegenerateMvNormal(μ, cholesky(σ).L,
                                   Matrix{eltype(μ)}(undef,0,0), Vector{eltype(μ)}(undef,0),
-                                  true, Σ)
+                                  true, σ)
     end
 end
 """
@@ -142,7 +137,7 @@ Initializes fields for DegenerateMvNormal type.
 function init_deg_mvnormal(μ::Vector, σ::Matrix; stdev::Bool = true)
     if stdev
         U, λ_vals, Vt = svd(σ)
-        λ_inv = [λ > 1e-6 ? 1/λ : 0.0 for λ in λ_vals]
+        λ_inv = [λ > 1e-12 ? 1/λ : 0.0 for λ in λ_vals]
         σ_inv = Vt' * Diagonal(λ_inv) * U'
         return DegenerateMvNormal(μ, σ, σ_inv, λ_vals)
     else
@@ -177,17 +172,17 @@ function Distributions.logpdf(d::DegenerateMvNormal, x::Vector{T}) where T<:Real
     # end
     if d.cov
         U, Λ, Vt = svd(d.Σ)
-        Λ_inv = [λ > 1e-6 ? 1/λ : 0.0 for λ in Λ]
-        return -(length(d.μ) * log2π + sum(log.(Λ)) + ((x .- d.μ)'*pinv(d.Σ)*(x .- d.μ))) / 2.0
+        ind_zero = findall(x -> x > 0.0, Λ)
+        return -(length(d.μ[ind_zero]) * log2π + sum(log.(Λ[ind_zero])) + ((x[ind_zero] .- d.μ[ind_zero])'*inv(d.Σ[ind_zero, ind_zero])*(x[ind_zero] .- d.μ[ind_zero]))) / 2.0
     else
         Σ = d.σ * d.σ'
 
         # b/c Σ may be singular, we need to use a generalized inverse
         # We opt for the Moore-Penrose pseudoinverse
         U, Λ, Vt = svd((Σ + Σ')/2)
-        Λ[Λ .< 10^(-6)] .= 0
-        Σ_inv = Vt' * Diagonal(Λ)' * U'
-        return -(length(d.μ) * log2π + sum(log.(Λ)) + ((x .- d.μ)'*Σ_inv*(x .- d.μ))) / 2.0
+        ind_zero = findall(x -> x > 0.0, Λ)
+        Σ = Σ[ind_zero, ind_zero]
+        return -(length(d.μ[ind_zero]) * log2π + sum(log.(Λ[ind_zero])) + ((x[ind_zero] .- d.μ[ind_zero])'*inv(Σ)*(x[ind_zero] .- d.μ[ind_zero]))) / 2.0
     end
 end
 
