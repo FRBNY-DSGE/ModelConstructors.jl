@@ -123,7 +123,10 @@ function DegenerateMvNormal(μ::Vector, σ::Matrix; stdev::Bool = true)
         return DegenerateMvNormal(μ, σ, Matrix{eltype(μ)}(undef,0,0), Vector{eltype(μ)}(undef,0),
                                   false, Matrix{eltype(μ)}(undef,0,0))
     else
-        return DegenerateMvNormal(μ, cholesky(σ).L,
+        U, λ_vals, Vt = svd(σ)
+        stdevs = diagm(sqrt.(λ_vals)) * Vt'
+        #Q,R = qr(stdevs)
+        return DegenerateMvNormal(μ, stdevs,
                                   Matrix{eltype(μ)}(undef,0,0), Vector{eltype(μ)}(undef,0),
                                   true, σ)
     end
