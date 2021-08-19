@@ -526,7 +526,7 @@ function parameter_ad(key::Symbol,
 
     if scaling == identity
         if typeof(value) <: Real
-            return UnscaledParameterAD{S,T,U_new}(key, value, valuebounds_new,
+            return UnscaledParameterAD{Real,T,U_new}(key, value, valuebounds_new,
                                               transform_parameterization_new, transform_new,
                                               prior_new, fixed, regimes, description, tex_label) #S
         elseif typeof(value) <: Vector
@@ -538,7 +538,7 @@ function parameter_ad(key::Symbol,
         end
     else
         if typeof(value) <: Real
-            return ScaledParameterAD{S,T,U_new}(key, value, scaling(value), valuebounds_new,
+            return ScaledParameterAD{Real,T,U_new}(key, value, scaling(value), valuebounds_new,
                                             transform_parameterization_new, transform_new,
                                             prior_new, fixed, scaling, regimes, description, tex_label)
         elseif typeof(value) <: Vector
@@ -595,9 +595,9 @@ end
 function parameter_ad(p::UnscaledParameterAD{S,T,U}, newvalue::Snew;
                    change_value_type::Bool = false) where {S<:Real, Snew<:Real, T <: Number, U <: Transform}
     p.fixed && return p    # if the parameter is fixed, don't change its value
-    if !change_value_type && (typeof(p.value) != typeof(newvalue))
-        error("Type of newvalue $(newvalue) does not match the type of the current value for parameter $(string(p.key)). Set keyword change_value_type = true if you want to overwrite the type of the parameter value.")
-    end
+   # if !change_value_type && (typeof(newvalue) <: typeof(p.value))
+       # error("Type of newvalue $(newvalue) does not match the type of the current value for parameter $(string(p.key)). Set keyword change_value_type = true if you want to overwrite the type of the parameter value.")
+   # end
     a,b = p.valuebounds
     if !(a <= newvalue <= b)
         throw(ParamBoundsError("New value of $(string(p.key)) ($(newvalue)) is out of bounds ($(p.valuebounds))"))
@@ -766,7 +766,7 @@ a scalar (default=1):
 - Exponential:   `a + exp(c*(x-b))`
 """
 transform_to_model_space(p::ParameterAD{S,<:Number,Untransformed}, x::S) where S = x
-function transform_to_model_space(p::ParameterAD{S,<:Number,SquareRoot}, x::S) where S
+function transform_to_model_space(p::ParameterAD{S,<:Number,SquareRoot}, x::T) where {S,T <: Real}
     (a,b), c = p.transform_parameterization, one(S)
     (a+b)/2 + (b-a)/2*c*x/sqrt(1 + c^2 * x^2)
 end
