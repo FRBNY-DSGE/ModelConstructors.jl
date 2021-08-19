@@ -19,9 +19,9 @@ q = MvNormal(m, σ² * U)
 r = MvNormal(n, σ² * V)
 s = MvNormal(o, σ² * Q)
 
-qᴰ = DegenerateMvNormal(m, σ² * U)
-rᴰ = DegenerateMvNormal(n, σ² * V)
-sᴰ = DegenerateMvNormal(o, σ² * Q)
+qᴰ = DegenerateMvNormal(m, σ² * U; stdev = false)
+rᴰ = DegenerateMvNormal(n, σ² * V; stdev = false)
+sᴰ = DegenerateMvNormal(o, σ² * Q; stdev = false)
 
 @testset "Test logpdf of DegenerateMvNormal at mean" begin
     @test logpdf(q, q.μ) ≈ logpdf(qᴰ, qᴰ.μ)

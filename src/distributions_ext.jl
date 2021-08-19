@@ -144,17 +144,6 @@ function init_deg_mvnormal(μ::Vector, σ::Matrix; stdev::Bool = true)
         σ_inv = Vt' * Diagonal(λ_inv) * U'
         return DegenerateMvNormal(μ, σ, σ_inv, λ_vals)
     else
-        # first svd the covariance matrix (keep in mind σ here is really Σ)
-        # U_v, λ_sq_vals, Vt_v = svd((σ + σ')/2)
-        # # get rid of near zeros
-        # λ_sq_vals[λ_sq_vals .< 10^(-6)] .= 0
-        # λ_vals = sqrt.(abs.(λ_sq_vals))
-        # # we can now compute σ matrix (now σ is actually σ)
-        # σ = U * diagm(λ_vals)
-        # # we now follow steps above using σ
-        # U, λ_vals, Vt = svd(σ)
-        # λ_inv = [λ > 1e-6 ? 1/λ : 0.0 for λ in λ_vals]
-        # σ_inv = Vt' * Diagonal(λ_inv) * U'
         return DegenerateMvNormal(μ, σ, Matrix{eltype(μ)}(undef,0,0), Vector{eltype(μ)}(undef,0),
                                   false, Matrix{eltype(μ)}(undef,0,0))
     end
@@ -168,11 +157,6 @@ Method bypasses Distributions package implementation of logpdf so as to minimize
 """
 function Distributions.logpdf(d::DegenerateMvNormal, x::Vector{T}) where T<:Real
     # We need Σ to compute the logpdf, not σ. Here, Σ = σ σ'
-    # if isempty(d.σ_inv)
-    #     d.σ_inv = inv(d.σ)
-    #     λ_all, _ = eigen(d.σ)
-    #     d.λ_vals = filter(x -> x>1e-6, λ_all)
-    # end
     if d.cov
         U, Λ, Vt = svd(d.Σ)
         ind_zero = findall(x -> x > 0.0, Λ)
@@ -218,27 +202,6 @@ Generate a draw from `d` with variance optionally scaled by `cc^2`.
 """
 function Distributions.rand(d::DegenerateMvNormal;  cc::T = 1.0) where T<:AbstractFloat
     return d.μ + cc * d.σ * randn(length(d))
-
-
-    # # abusing notation slightly, if Y is a degen MV normal r.v. with covariance matrix Σ,
-    # # and Σ = U Λ^2 Vt according to the svd, then given an standard MV normal r.v X with
-    # # the same dimension as Y, Y = μ + UΛX.
-
-    # # we need to ensure symmetry when computing SVD
-    # U, λ_vals, Vt = svd((d.σ + d.σ')./2)
-
-    # # set near-zero values to zero
-    # λ_vals[λ_vals .< 10^(-6)] .= 0
-
-    # # leave x as 0 where λ_vals equals 0 (b/c r.v. is fixed where λ_vals = 0)
-    # λ_vals = abs.(λ_vals)
-    # x = zeros(length(λ_vals))
-    # for i in 1:length(λ_vals)
-    #     if λ_vals[i] != 0
-    #         x[i] = randn()
-    #     end
-    # end
-    # return d.μ + cc*U*diagm(sqrt.(λ_vals))*x
 end
 
 """
