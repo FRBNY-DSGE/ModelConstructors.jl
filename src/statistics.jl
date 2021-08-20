@@ -12,6 +12,37 @@ end
 _filter_all_fixed_para(p::Parameter) = haskey(p.regimes, :fixed) ? all(values(p.regimes[:fixed])) : p.fixed
 
 """
+`prior(parameters::ParameterVector{T}, x::AbstractVector{T}; isfree::Bool = false) where {T<:Number}`
+Calculates log joint prior density of the vector `x ∈ ℝⁿ` using
+the priors and transformations specified in `parameters`,
+appropriately adjusting the prior using the Jacobian of the
+transformations.
+If the keyword `isfree` is true, then we assume that `x` only
+corresponds to free parameters already, hence its length is potentially
+shorter than the length of `parameters`.
+"""
+function prior(parameters::ParameterVector, x::AbstractVector{T};
+               isfree::Bool = false) where {T <: Number}
+    if isfree
+        free_params = parameters
+        free_x      = x
+    else
+        unfixed     = map(θ -> !θ.fixed, parameters)
+        free_params = Base.filter(x -> !_filter_all_fixed_para(x), parameters)
+        free_x      = x[unfixed]
+    end
+
+    logpdfs = zero(T)
+    @inbounds for i = 1:length(free_params)
+        if hasprior(free_params[i])
+            logpdfs += logpdf(get(free_params[i].prior), transform_to_model_space(free_params[i], free_x[i])) +
+                log(abs(differentiate_transform_to_model_space(free_params[i], free_x[i])))
+        end
+    end
+    logpdfs
+end
+
+"""
 ```
 posterior(loglikelihood::Function, parameters::ParameterVector,
                    data::AbstractArray; ϕ_smc::Float64 = 1.)

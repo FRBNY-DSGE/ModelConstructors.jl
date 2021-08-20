@@ -7,8 +7,8 @@ function Base.show(io::IO, m::AbstractModel)
 end
 
 @inline function Base.getindex(m::AbstractModel, i::Integer)
-    if i <= (j = length(m.parameters))
-        return m.parameters[i]
+    if i <= (j = length(get_parameters(m)))
+        return get_parameters(m)[i]
     else
         return m.steady_state[i-j]
     end
@@ -17,16 +17,16 @@ end
 # Need to define like this so as to disable bounds checking
 @inline function Base.getindex(m::AbstractModel, k::Symbol)
     i = m.keys[k]
-    @inbounds if i <= (j = length(m.parameters))
-        return m.parameters[i]
+    @inbounds if i <= (j = length(get_parameters(m)))
+        return get_parameters(m)[i]
     else
         return m.steady_state[i-j]
     end
 end
 
 @inline function Base.setindex!(m::AbstractModel, value::Number, i::Integer)
-    if i <= (j = length(m.parameters))
-        param = m.parameters[i]
+    if i <= (j = length(get_parameters(m)))
+        param = get_parameters(m)[i]
         param.value = value
         if isa(param, ScaledParameter)
             param.scaledvalue = param.scaling(value)
@@ -42,8 +42,8 @@ end
 Base.setindex!(m::AbstractModel, value::Array, k::Symbol) = Base.setindex!(m, value, m.keys[k])
 
 @inline function Base.setindex!(m::AbstractModel, value::Array, i::Integer)
-    if i <= (j = length(m.parameters))
-        param = m.parameters[i]
+    if i <= (j = length(get_parameters(m)))
+        param = get_parameters(m)[i]
         param.value = value
         if isa(param, ScaledParameter)
             param.scaledvalue = param.scaling(value)
@@ -61,12 +61,12 @@ end
 setindex!(m::AbstractModel, param::AbstractParameter, i::Integer)
 ```
 
-If `i`<length(m.parameters), overwrites m.parameters[i] with
-param. Otherwise, overwrites m.steady_state[i-length(m.parameters).
+If `i`<length(get_parameters(m)), overwrites get_parameters(m)[i] with
+param. Otherwise, overwrites m.steady_state[i-length(get_parameters(m)).
 """
 @inline function Base.setindex!(m::AbstractModel, param::AbstractParameter, i::Integer)
-    if i <= (j = length(m.parameters))
-        m.parameters[i] = param
+    if i <= (j = length(get_parameters(m)))
+        get_parameters(m)[i] = param
     else
         m.steady_state[i-j] = param
     end
@@ -82,7 +82,7 @@ Base.setindex!(m::AbstractModel, value, k::Symbol) = Base.setindex!(m, value, m.
 
 Syntax for adding a parameter to a model: m <= parameter.
 NOTE: If `p` is added to `m` and length(m.steady_state) > 0, `keys(m)` will not generate the
-index of `p` in `m.parameters`.
+index of `p` in `get_parameters(m)`.
 """
 function (<=)(m::AbstractModel{T}, p::AbstractParameter{T}) where T
 
@@ -91,7 +91,7 @@ function (<=)(m::AbstractModel{T}, p::AbstractParameter{T}) where T
         new_param_index = length(m.keys) + 1
 
         # grow parameters and add the parameter
-        push!(m.parameters, p)
+        push!(get_parameters(m), p)
 
         # add parameter location to dict
         setindex!(m.keys, new_param_index, p.key)
@@ -151,7 +151,7 @@ function (<=)(m::AbstractModel{T}, ssp::SteadyStateParameterGrid) where {T}
     end
 end
 
-Distributions.logpdf(m::AbstractModel) = logpdf(m.parameters)
+Distributions.logpdf(m::AbstractModel) = logpdf(get_parameters(m))
 Distributions.pdf(m::AbstractModel) = exp(logpdf(m))
 
 # Convenience functions
@@ -162,66 +162,26 @@ n_shocks_expectational(m::AbstractModel)    = length(m.expected_shocks)
 n_observables(m::AbstractModel)             = length(m.observables)
 n_pseudo_observables(m::AbstractModel)      = length(m.pseudo_observables)
 n_equilibrium_conditions(m::AbstractModel)  = length(m.equilibrium_conditions)
-n_parameters(m::AbstractModel)              = length(m.parameters)
+n_parameters(m::AbstractModel)              = length(get_parameters(m))
 n_parameters_steady_state(m::AbstractModel) = length(m.steady_state)
-n_parameters_free(m::AbstractModel)         = length(get_free_para_inds(m.parameters; regime_switching = true))
+n_parameters_free(m::AbstractModel)         = length(get_free_para_inds(get_parameters(m); regime_switching = true))
 
 function n_parameters_regime_switching(m::AbstractModel)
-    return n_parameters_regime_switching(m.parameters)
+    return n_parameters_regime_switching(get_parameters(m))
 end
 
-function get_fixed_para_inds(parameters::ParameterVector; regime_switching::Bool = false,
+get_parameters(m::AbstractModel) = m.parameters
+
+function get_fixed_para_inds(m::AbstractModel; regime_switching::Bool = false,
                              toggle::Bool = true)
-    if regime_switching
-        if toggle
-            toggle_regime!(parameters, 1)
-        end
-
-        reg_fixed = [θ.fixed for θ in parameters] # it is assumed all regimes are toggled to regime 1
-        for θ in parameters
-            if !isempty(θ.regimes) # this parameter has regimes
-                if haskey(θ.regimes, :fixed)
-                    push!(reg_fixed, [regime_fixed(θ, i) for i in 2:length(θ.regimes[:value])]...)
-                elseif θ.fixed # since regimes[:fixed] is non-existent but θ.fixed is true,
-                    # it is assumed all regimes are fixed.
-                    push!(reg_fixed, trues(length(θ.regimes[:value]) - 1)...)
-                else # All regimes are not fixed
-                    push!(reg_fixed, falses(length(θ.regimes[:value]) - 1)...)
-                end
-            end
-        end
-
-        return findall(reg_fixed)
-    else
-        return findall([θ.fixed for θ in parameters])
-    end
+    return get_fixed_para_inds(m.parameters; regime_switching = regime_switching,
+                               toggle = toggle)
 end
 
-function get_free_para_inds(parameters::ParameterVector; regime_switching::Bool = false,
-                            toggle::Bool = true)
-    if regime_switching
-        if toggle
-            toggle_regime!(parameters, 1)
-        end
-
-        reg_free = [!θ.fixed for θ in parameters] # it is assumed all regimes are toggled to regime 1
-        for θ in parameters
-            if !isempty(θ.regimes) # this parameter has regimes
-                if haskey(θ.regimes, :fixed)
-                    push!(reg_free, [!regime_fixed(θ, i) for i in 2:length(θ.regimes[:value])]...)
-                elseif θ.fixed # since regimes[:fixed] is non-existent but θ.fixed is true,
-                    # it is assumed all regimes are fixed.
-                    push!(reg_free, falses(length(θ.regimes[:value]) - 1)...)
-                else # All regimes are not fixed
-                    push!(reg_free, trues(length(θ.regimes[:value]) - 1)...)
-                end
-            end
-        end
-
-        return findall(reg_free)
-    else
-        return findall([!θ.fixed for θ in parameters])
-    end
+function get_free_para_inds(m::AbstractModel; regime_switching::Bool = false,
+                             toggle::Bool = true)
+    return get_free_para_inds(m.parameters; regime_switching = regime_switching,
+                               toggle = toggle)
 end
 
 """
@@ -481,27 +441,27 @@ end
 Draw a random sample from the model's prior distribution.
 """
 function rand_prior(m::AbstractModel; ndraws::Int = 100_000)
-    T = typeof(m.parameters[1].value)
-    npara = length(m.parameters)
+    T = typeof(get_parameters(m)[1].value)
+    npara = length(get_parameters(m))
     priorsim = Array{T}(undef, ndraws, npara)
 
     for i in 1:ndraws
         priodraw = Array{T}(undef, npara)
 
         # Parameter draws per particle
-        for j in 1:length(m.parameters)
+        for j in 1:length(get_parameters(m))
 
-            priodraw[j] = if !m.parameters[j].fixed
-                prio = rand(m.parameters[j].prior.value)
+            priodraw[j] = if !get_parameters(m)[j].fixed
+                prio = rand(get_parameters(m)[j].prior.value)
 
                 # Resample until all prior draws are within the value bounds
-                while !(m.parameters[j].valuebounds[1] < prio < m.parameters[j].valuebounds[2])
-                    prio = rand(m.parameters[j].prior.value)
+                while !(get_parameters(m)[j].valuebounds[1] < prio < get_parameters(m)[j].valuebounds[2])
+                    prio = rand(get_parameters(m)[j].prior.value)
                 end
 
                 prio
             else
-                m.parameters[j].value
+                get_parameters(m)[j].value
             end
         end
         priorsim[i,:] = priodraw'
@@ -510,7 +470,7 @@ function rand_prior(m::AbstractModel; ndraws::Int = 100_000)
     priorsim
 end
 
-@inline unpack(m::AbstractModel, ::Val{k}) where {k} = isa(m[k], ScaledParameter) ? m[k].scaledvalue : m[k].value
+@inline unpack(m::AbstractModel, ::Val{k}) where {k} = get_untransformed_values(m[k])
 
 function parameters2namedtuple(m::AbstractModel)
     return parameters2namedtuple(get_parameters(m))

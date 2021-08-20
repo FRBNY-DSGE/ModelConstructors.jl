@@ -250,7 +250,7 @@ end
 
 """
 ```
-SteadyStateValueGrid{T} <: AbstractParameter{T}
+SteadyStateParameterGrid{T} <: AbstractParameter{T}
 ```
 
 Steady-state model parameter grid (for heterogeneous agent models) whose value is calculated by an
@@ -276,6 +276,14 @@ mutable struct SteadyStateParameterGrid{T} <: AbstractParameter{T}
     description::String
     tex_label::String
 end
+
+iterate(p::SteadyStateParameterGrid) = iterate(p.value)
+iterate(p::SteadyStateParameterGrid, i::Int) = iterate(p.value, i)
+size(p::SteadyStateParameterGrid) = size(p.value)
+size(p::SteadyStateParameterGrid, dims) = size(p.value, dims)
+sum(p::SteadyStateParameterGrid; dims = nothing) = isnothing(dims) ? sum(p.value) : sum(p.value; dims = dims)
+getindex(p::SteadyStateParameterGrid, i) = getindex(p.value, i)
+-(p::SteadyStateParameterGrid) = -p.value
 
 function SteadyStateParameterGrid(key::Symbol,
                                   value::Array{T};
@@ -313,6 +321,8 @@ mutable struct SteadyStateParameterArray{T} <: AbstractParameter{T}
     tex_label::String
 end
 
+iterate(p::SteadyStateParameterArray) = iterate(p.value)
+
 """
 ```
 SteadyStateParameterArray{T<:Number}(key::Symbol, value::Array{T};
@@ -348,7 +358,7 @@ NullableOrPriorMultivariate = Union{NullablePriorMultivariate, ContinuousMultiva
 
 # We want to use value field from UnscaledParameters and
 # SteadyStateParameters in computation, so we alias their union here.
-UnscaledOrSteadyState = Union{UnscaledParameter, SteadyStateParameter}
+UnscaledOrSteadyState = Union{UnscaledParameter, UnscaledParameterAD, SteadyStateParameter}
 
 """
 ```
@@ -884,7 +894,7 @@ function transform_to_real_line(p::ParameterAD{S,<:Number,SquareRoot}, x::S = p.
         println("b is $b")
         println("x is $x")
         println("cx is $cx")
-        error("invalid paramter value")
+        error("invalid parameter value")
     end
     (1/c)*cx/sqrt(1 - cx^2)
 end
@@ -999,7 +1009,7 @@ end
 differentiate_transform_to_real_line(pvec::ParameterVector, values::Vector{S}) where S = map(differentiate_transform_to_real_line, pvec, values)
 differentiate_transform_to_real_line(pvec::ParameterVector{S}) where S = map(differentiate_transform_to_real_line, pvec)
 
-# define operators to work on parameters
+# define operators to work on parameters and parameter_ad
 
 Base.convert(::Type{T}, p::UnscaledParameter) where {T<:Real}     = convert(T,p.value)
 Base.convert(::Type{T}, p::UnscaledVectorParameter) where {T <: Vector}     = convert(T,p.value)
@@ -1009,6 +1019,11 @@ Base.convert(::Type{T}, p::ScaledVectorParameter) where {T <: Vector}       = co
 Base.convert(::Type{T}, p::SteadyStateParameter) where {T<:Real}  = convert(T,p.value)
 Base.convert(::Type{ForwardDiff.Dual{T,V,N}}, p::UnscaledParameter) where {T,V,N} = convert(V,p.value)
 Base.convert(::Type{ForwardDiff.Dual{T,V,N}}, p::ScaledParameter) where {T,V,N} = convert(V,p.scaledvalue)
+
+Base.convert(::Type{T}, p::UnscaledParameterAD) where {T<:Real}     = convert(T,p.value)
+Base.convert(::Type{T}, p::ScaledParameterAD) where {T<:Real}       = convert(T,p.scaledvalue)
+Base.convert(::Type{ForwardDiff.Dual{T,V,N}}, p::UnscaledParameterAD) where {T,V,N} = convert(V,p.value)
+Base.convert(::Type{ForwardDiff.Dual{T,V,N}}, p::ScaledParameterAD) where {T,V,N} = convert(V,p.scaledvalue)
 
 Base.promote_rule(::Type{AbstractParameter{T}}, ::Type{U}) where {T<:Real, U<:Number} = promote_rule(T,U)
 Base.promote_rule(::Type{AbstractVectorParameter{T}}, ::Type{U}) where {T<:Vector, U<:Vector} = promote_rule(T,U)
@@ -1126,26 +1141,36 @@ Base.iterate(p::Parameter, state=1) = state > length(p.value) ? nothing : (state
 
 """
 ```
-update!(pvec::ParameterVector, values::Vector{S}; change_value_type::Bool = false) where S
+update!(pvec::ParameterVector, values::AbstractVector{S}; change_value_type::Bool = false) where S
 ```
 
 Update all parameters in `pvec` that are not fixed with
-`values`. Length of `values` must equal length of `pvec`.
+`values`. Length of `values` does not need equal length of `pvec` (as in the case of regime-switching parameters).
 Function optimized for speed.
 """
-function update!(pvec::ParameterVector, values::Vector{T};
+function update!(pvec::ParameterVector, values::AbstractVector{T};
                  change_value_type::Bool = false) where T
+    # TODO: move the ParameterAD part of this function to its own update!
+    #       e.g. `update!(pvec::AbstractVector{AbstractParameterAD}, values::AbstractVector{T};
+    #                     change_value_type::Bool = false) where T
+    #       so that we don't have to use the following code's assumption that
+    #       the first element of `pvec` is a `ParameterAD` and instead can use
+    #       use multiple dispatch to get it to work.
+    #       However, to make this work, whenever you have a model
+    #       whose parameters you want to autodiff with respect to,
+    #       then you need to explicitly declare a `Vector{AbstractParameterAD}`
+    #       rather than just a `ParameterVector`
+
     # this function is optimised for speed
- #   @assert length(values) == length(pvec) "Length of input vector (=$(length(values))) must match length of parameter vector (=$(length(pvec)))"
     if change_value_type
-        tmp = if eltype(pvec) <: ParameterAD
+        tmp = if typeof(pvec[1]) <: ParameterAD
             (x,y) -> parameter_ad(x, y; change_value_type = change_value_type)
         else
             (x,y) -> parameter(x, y; change_value_type = change_value_type)
         end
         map!(tmp, pvec, pvec, values)
     else
-        if eltype(pvec) <: ParameterAD
+        if typeof(pvec[1]) <: ParameterAD
             map!(parameter_ad, pvec, pvec, values[1:length(pvec)])
         else
             map!(parameter, pvec, pvec, values[1:length(pvec)])
@@ -1178,7 +1203,7 @@ end
 
 """
 ```
-update!(pvec::ParameterVector, values::Vector{S},
+update!(pvec::ParameterVector, values::AbstractVector{S},
     indices::BitArray{1}; change_value_type::Bool = false) where S
 ```
 
@@ -1255,7 +1280,7 @@ equal length of `pvec`.
 
 We define the non-mutating version like this because we need the type stability of map!
 """
-function update(pvec::ParameterVector, values::Vector{S}) where S
+function update(pvec::ParameterVector, values::AbstractVector{S}) where S
     tmp = copy(pvec)
     update!(tmp, values)
     return tmp
@@ -1321,7 +1346,7 @@ Distributions.rand(p::Vector{AbstractParameter{Float64}}; regime_switching::Bool
 
 Generate a draw from the prior of each parameter in `p`.
 """
-function Distributions.rand(p::Vector{AbstractParameter{Float64}}; regime_switching::Bool = false,
+function Distributions.rand(p::AbstractVector{AbstractParameter{Float64}}; regime_switching::Bool = false,
                             toggle::Bool = true)
 
     if regime_switching
@@ -1351,7 +1376,7 @@ rand_regime_switching(p::Vector{AbstractParameter{Float64}}; toggle::Bool = true
 
 Generate a draw from the prior of each parameter in `p`.
 """
-function rand_regime_switching(p::Vector{AbstractParameter{Float64}}; toggle::Bool = true)
+function rand_regime_switching(p::AbstractVector{AbstractParameter{Float64}}; toggle::Bool = true)
     draw = zeros(length(p))
 
     # Handle the regime 1 values
@@ -1385,10 +1410,10 @@ function rand_regime_switching(p::Vector{AbstractParameter{Float64}}; toggle::Bo
                         regime_val(para, regime)
                     elseif (haskey(para.regimes, :prior) ? haskey(para.regimes[:prior], regime) : false) # regime-switching in prior
                         # Resample until all prior draws are within the value bounds
-                        prio = rand(regime_prior(para, regime).value)
+                        prio = rand(get(regime_prior(para, regime)))
                         lowerbound, upperbound = haskey(para.regimes, :valuebounds) ? regime_valuebounds(para, regime) : para.valuebounds
                         while !(lowerbound < prio < upperbound)
-                            prio = rand(regime_prior(para, regime).value)
+                            prio = rand(get(regime_prior(para, regime)))
                         end
                         prio
                     else # just use para.prior for prior draws
@@ -1454,6 +1479,19 @@ function moments(θ::Parameter)
     end
 end
 
+function moments(θ::Parameter, regime::Int64)
+    if θ.fixed
+        return θ.regimes[:value][regime]
+    else
+        prior = get(θ.regimes[:prior][regime])
+        if isa(prior, RootInverseGamma)
+            return prior.τ, prior.ν
+        else
+            return mean(prior), std(prior)
+        end
+    end
+end
+
 function describe_prior(param::Parameter)
     if param.fixed
         return "fixed at " * string(param.value)
@@ -1480,6 +1518,62 @@ function describe_prior(param::Parameter)
     end
 end
 
+
+function get_fixed_para_inds(parameters::ParameterVector; regime_switching::Bool = false,
+                             toggle::Bool = true)
+    if regime_switching
+        if toggle
+            toggle_regime!(parameters, 1)
+        end
+
+        reg_fixed = [θ.fixed for θ in parameters] # it is assumed all regimes are toggled to regime 1
+        for θ in parameters
+            if !isempty(θ.regimes) # this parameter has regimes
+                if haskey(θ.regimes, :fixed)
+                    push!(reg_fixed, [regime_fixed(θ, i) for i in 2:length(θ.regimes[:value])]...)
+                elseif θ.fixed # since regimes[:fixed] is non-existent but θ.fixed is true,
+                    # it is assumed all regimes are fixed.
+                    push!(reg_fixed, trues(length(θ.regimes[:value]) - 1)...)
+                else # All regimes are not fixed
+                    push!(reg_fixed, falses(length(θ.regimes[:value]) - 1)...)
+                end
+            end
+        end
+
+        return findall(reg_fixed)
+    else
+        return findall([θ.fixed for θ in parameters])
+    end
+end
+
+function get_free_para_inds(parameters::ParameterVector; regime_switching::Bool = false,
+                            toggle::Bool = true)
+    if regime_switching
+        if toggle
+            toggle_regime!(parameters, 1)
+        end
+
+        reg_free = [!θ.fixed for θ in parameters] # it is assumed all regimes are toggled to regime 1
+        for θ in parameters
+            if !isempty(θ.regimes) # this parameter has regimes
+                if haskey(θ.regimes, :fixed)
+                    push!(reg_free, [!regime_fixed(θ, i) for i in 2:length(θ.regimes[:value])]...)
+                elseif θ.fixed # since regimes[:fixed] is non-existent but θ.fixed is true,
+                    # it is assumed all regimes are fixed.
+                    push!(reg_free, falses(length(θ.regimes[:value]) - 1)...)
+                else # All regimes are not fixed
+                    push!(reg_free, trues(length(θ.regimes[:value]) - 1)...)
+                end
+            end
+        end
+
+        return findall(reg_free)
+    else
+        return findall([!θ.fixed for θ in parameters])
+    end
+end
+
+
 """
 ```
 function n_parameters_regime_switching(p::ParameterVector)
@@ -1499,18 +1593,52 @@ function n_parameters_regime_switching(p::ParameterVector)
     return base_num
 end
 
+"""
+```
+get_untransformed_values(p::AbstractParameter)
+```
+returns the untransformed values that are used in mathematical operations.
+The main use case is returning the `scaledvalue` if
+`p` is a `ScaledParameter` and `value` if it is an `UnscaledParameter`.
+
+This function currently does not work with regime-switching parameters.
+
+Additionally, note that unless `p.value` is a concrete subtype of `AbstractArray` or
+some other type such that `p.value` is just a reference, then it is advisable
+to avoid using `get_untransformed_values` when possible. The reason is that
+`p.value` creates an extra allocation when `p.value` is not a reference.
+For example, if `p = parameter(:a, 1.0)`, then `p.value` creates 1 allocation,
+hence `get_untransformed_values(p)` creates 1 allocation.
+This behavior means that while `p * p` creates 1 allocation,
+`get_untransformed_values(p) * get_untransformed_values(p)` creates 3 allocations.
+If `get_untransformd_values` is called many times, then these additional allocations
+can add some extra time to the computations. For example, `p.value * rand(1e7)`
+versus `p * rand(1e7)` can result in 10 additional microseconds.
+"""
+get_untransformed_values(p::AbstractParameter) = p.value
+get_untransformed_values(p::ScaledParameter) = p.scaledvalue
+get_untransformed_values(pvec::ParameterVector) = [untransformed_values(p) for p in pvec]
 
 """
 ```
 parameters2namedtuple(m)
 ```
-
 returns the parameters of `m` as a `NamedTuple`. The input `m`
-can be either an `AbstractVector{<: AbstractParameter}` or
+e acan be either an `AbstractVector{<: AbstractParameter}` or
 an `AbstractModel`.
+
+This function currently does not work with regime-switching parameters.
 """
 function parameters2namedtuple(pvec::AbstractVector{S}) where {S <: AbstractParameter}
     tuple_names = Tuple(p.key for p in pvec)
-    tuple_vals = [(isa(p, ScaledParameter) ? p.scaledvalue : p.value) for p in pvec]
+    tuple_vals = [get_untransformed_values(p) for p in pvec]
     return NamedTuple{tuple_names}(tuple_vals)
 end
+
+# Broadcasting for parameters
+
+# still makes an allocation like get_untransformed_values(p) is not a reference to an Array but is faster
+Base.broadcastable(p::AbstractParameter) = Ref(p)
+
+# this returns a reference to an Array so no allocations
+Base.broadcastable(p::SteadyStateParameterGrid) = get_untransformed_values(p)

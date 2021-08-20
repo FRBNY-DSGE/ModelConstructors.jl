@@ -19,6 +19,7 @@ Pages = [
   "model_design.md",
   "example_model.md",
   "implementation_details.md",
+  "regime_switching.md",
   "contributing.md",
   "license.md"
 ]

@@ -6,7 +6,8 @@ module ModelConstructors
     using ForwardDiff, Nullables, Printf, Random
     using LinearAlgebra, OrderedCollections, SpecialFunctions
 
-    import Base.isempty, Base.<, Base.min, Base.max, Base.length
+    import Base.isempty, Base.<, Base.min, Base.max, Base.length, Base.iterate, Base.size
+    import Base.sum, Base.getindex, Base.-
     import Distributions.log2π, Distributions.params, Distributions.mean, Distributions.std
     import Distributions.pdf, Distributions.logpdf, Distributions.Distribution
     import Distributions.rand, Distributions.Matrixvariate, Distributions.LinearAlgebra
@@ -30,7 +31,7 @@ module ModelConstructors
         # abstractmodel.jl
         AbstractModel, description,
         n_states, n_states_augmented, n_shocks_exogenous, n_shocks_expectational,
-        n_equilibrium_conditions, n_observables, n_parameters, n_parameters_regime_switching, n_parameters_steady_states,
+        n_equilibrium_conditions, n_observables, n_parameters, n_parameters_regime_switching, n_parameters_steady_state,
         n_parameters_free, n_pseudo_observables, get_dict, get_key,
         spec, subspec, saveroot, dataroot,
         data_vintage, data_id, cond_vintage,
@@ -45,7 +46,7 @@ module ModelConstructors
         differentiate_transform_to_real_line, differentiate_transform_to_model_space,
         update, update!, transform_to_model_space, transform_to_real_line, Interval,
         ParamBoundsError, Untransformed, SquareRoot, moments,
-        prior,
+        prior, get_untransformed_values, parameters2namedtuple,
 
         # distributions_ext.jl
         Uniform, Exponential, Normal, BetaAlt, GammaAlt, RootInverseGamma, pdf, logpdf, rand,

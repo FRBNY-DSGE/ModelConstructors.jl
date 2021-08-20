@@ -1,7 +1,7 @@
 name = "ModelConstructors"
 uuid = "e47e5152-bd14-11e9-1b46-c951f0a7041d"
-authors = ["William Chen <william.chen@ny.frb.org>", "Shlok Goyal <shlok.goyal@ny.frb.org>", "Alissa Johnson <alissa.johnson@ny.rb.org"]
-version = "0.2.4"
+authors = ["William Chen <william.chen@ny.frb.org>", "Shlok Goyal <shlok.goyal@ny.frb.org>", "Alissa Johnson <alissa.johnson@ny.frb.org"]
+version = "0.2.5"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
@@ -19,8 +19,8 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 
 [compat]
-DataFrames = "0.11.7, 0.12.0, 0.13, 0.14, 0.15, 0.16.0, 0.17, 0.18, 0.19, 0.20, 0.21, 0.22"
-Distributions = "0.16, 0.17, 0.18, 0.19, 0.20, 0.21, 0.22, 0.23, 0.24"
+DataFrames = "0.11.7, 0.12.0, 0.13, 0.14, 0.15, 0.16.0, 0.17, 0.18, 0.19, 0.20, 0.21, 0.22, 1"
+Distributions = "0.16, 0.17, 0.18, 0.19, 0.20, 0.21, 0.22, 0.23, 0.24, 0.25"
 ForwardDiff = "^0.10"
 Nullables = "^0.0.8, 1"
 OrderedCollections = "^1.1.0"
