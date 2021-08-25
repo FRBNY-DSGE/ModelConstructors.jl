@@ -143,6 +143,16 @@ function DegenerateMvNormal(μ::Vector, σ::Matrix; stdev::Bool = true)
                                   true, σ)
     end
 end
+
+"""
+```
+DegenerateMvNormal(μ::Vector, σ::Matrix,  σ_inv::Matrix, λ_vals::Vector; stdev::Bool = true))
+```
+Constructor for DegenerateMvNormal type.
+"""
+function DegenerateMvNormal(μ::Vector, σ::Matrix, σ_inv::Matrix, λ_vals::Vector; stdev::Bool = true)
+    return DegenerateMvNormal(μ, σ, σ_inv, λ_vals, false, Matrix{eltype(μ)}(undef,0,0))
+end
 """
 ```
 function init_deg_mvnormal(μ::Vector, σ::Matrix)
@@ -154,7 +164,7 @@ function init_deg_mvnormal(μ::Vector, σ::Matrix; stdev::Bool = true)
         U, λ_vals, Vt = svd(σ)
         λ_inv = [λ > 1e-12 ? 1/λ : 0.0 for λ in λ_vals]
         σ_inv = Vt' * Diagonal(λ_inv) * U'
-        return DegenerateMvNormal(μ, σ, σ_inv, λ_vals)
+        return DegenerateMvNormal(μ, σ, σ_inv, λ_vals, false, Matrix{eltype(μ)}(undef,0,0))
     else
         return DegenerateMvNormal(μ, σ, Matrix{eltype(μ)}(undef,0,0), Vector{eltype(μ)}(undef,0),
                                   false, Matrix{eltype(μ)}(undef,0,0))
