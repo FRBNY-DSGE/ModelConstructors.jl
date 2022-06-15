@@ -32,7 +32,9 @@ function set_regime_val!(p::Parameter{S},
             return p.regimes[:value][i]
         else # If it doesn't exist yet, then we want to set the value for this regime
             p.regimes[:value][i] = v
-            p.regimes[:valuebounds][i] = (v, v)
+            if !haskey(p.regimes, :valuebounds) || !haskey(p.regimes[:valuebounds], i)
+                p.regimes[:valuebounds][i] = (v, v)
+            end
         end
     elseif (haskey(p.regimes, :valuebounds) && haskey(p.regimes[:valuebounds], i) ?
             ((regime_valuebounds(p, i)[1] <= v <= regime_valuebounds(p, i)[2]) || override_bounds) : false)

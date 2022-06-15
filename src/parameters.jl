@@ -1297,7 +1297,8 @@ function Distributions.logpdf(p::Parameter{T,U}) where {T, U}
         end
 
         if isnothing(free_para_regimes) # Regimes can't all be fixed
-            error("All regimes are fixed. The log prior cannot be evaluated for Parameter $(p.key)")
+            return 0.0
+            # error("All regimes are fixed. The log prior cannot be evaluated for Parameter $(p.key)")
         end
 
         if haskey(p.regimes, :prior) # does prior also regime switch?
