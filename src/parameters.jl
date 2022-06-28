@@ -1291,7 +1291,7 @@ Distributions.pdf(p::AbstractParameter) = exp(logpdf(p))
 function Distributions.logpdf(p::Parameter{T,U}) where {T, U}
     if haskey(p.regimes, :value) # regime-switching values
         free_para_regimes = if haskey(p.regimes, :fixed) # Figure out which regimes
-            findall(.!values(p.regimes[:fixed]))         # are not fixed. Note p.regimes[:fixed] is an OrderedDict
+            collect(keys(p.regimes[:fixed]))[.!values(p.regimes[:fixed])] # are not fixed. Note p.regimes[:fixed] is an OrderedDict
         else
             1:length(p.regimes[:value])
         end
