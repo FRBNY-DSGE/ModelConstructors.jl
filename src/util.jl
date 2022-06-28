@@ -232,3 +232,58 @@ Sparse identity matrix - since deprecated in 0.7
 function speye(T::Type, n::Integer)
     return SparseMatrixCSC{T}(I, n, n)
 end
+
+"""
+```
+n_param_regs(params::ParameterVector)
+```
+Get total number of parameter regimes for each parameter
+"""
+function n_param_regs(params::ParameterVector)
+    return [haskey(params[i].regimes, :value) ? length(params[i].regimes[:value]) : 1 for i in 1:length(params)]
+end
+
+"""
+```
+find_param_ind(params::Vector{AbstractParameter{Float64}}, para_one::Symbol; regime::Int = 1)
+```
+Return the index of (para_one, regime) in params.
+"""
+function find_param_ind(params::Vector{AbstractParameter{Float64}}, para_one::Symbol; regime::Int = 1)
+    if regime == 1
+        correct_ind = findfirst(x -> x == para_one, [params[i].key for i in 1:length(params)])
+        return isnothing(correct_ind) ? -1 : correct_ind
+    end
+    j = length(params)
+    for i in 1:length(params)
+        if !isempty(params[i].regimes) && params[i].key != para_one
+            j += length(params[i].regimes[:value])-1
+        elseif params[i].key == para_one
+            if haskey(params[i].regimes[:value], regime)
+                return j += regime - 1
+            else
+                return -1
+            end
+        end
+    end
+    return -1
+end
+
+"""
+```
+find_ind_param(params::Vector{AbstractParameter{Float64}}, para_one::Symbol; regime::Int = 1)
+```
+Return (para_one, regime) in params of given index. para_one is index in params, not the key. Inverse of find_param_ind
+"""
+function find_ind_param(params::Vector{AbstractParameter{Float64}}, para_ind::Int64)
+    para_regs = n_param_regs(params)
+    if para_ind <= length(params)
+        return para_ind, 1
+    end
+    @assert para_ind <= sum(para_regs)
+
+    inds_so_far = cumsum(para_regs .- 1) .+ length(params)
+    par_before = findlast(x -> x < para_ind, inds_so_far)
+
+    return par_before+1, para_ind - inds_so_far[par_before] + 1
+end
