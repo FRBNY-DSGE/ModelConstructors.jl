@@ -117,7 +117,7 @@ See [Multivariate normal distribution - Degenerate case](en.wikipedia.org/wiki/M
 """
 mutable struct DegenerateMvNormal <: Distribution{Multivariate, Continuous}
     μ::Vector        # mean
-    σ::Matrix        # standard deviation
+    σ::Matrix        # standard deviation OR VARIANCE??
     σ_inv::Matrix    # inverse of standard deviation matrix
     λ_vals::Vector   # eigenvalues of σ
     cov::Bool        # indicates if struct contains covariance matrix
@@ -212,8 +212,15 @@ Distributions.rand(d::DegenerateMvNormal; cc::T = 1.0) where T<:AbstractFloat
 
 Generate a draw from `d` with variance optionally scaled by `cc^2`.
 """
-function Distributions.rand(d::DegenerateMvNormal;  cc::T = 1.0) where T<:AbstractFloat
-    return d.μ + cc * d.σ * randn(length(d))
+
+function Distributions.rand(d::DegenerateMvNormal; cc::T = 1.0) where T<:AbstractFloat
+
+    # C = cholesky(d.σ, Val(true), check = false)
+    # A = C.U[C.p, C.p]
+
+    # return d.μ + cc*A*randn(length(d))
+    return d.μ + cc*d.σ*randn(length(d))
+
 end
 
 """
