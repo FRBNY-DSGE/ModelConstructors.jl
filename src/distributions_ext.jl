@@ -439,19 +439,16 @@ Thanks, dude!
 """
 function truncmean(Dist::Truncated)
     F(x) = x*pdf(Dist,x)
-    y = 0.0;
-
+    lower, upper = extrema(Dist)
     if typeof(Dist) <: ContinuousDistribution # Continuous distribution
-        y = quadgk(F, Dist.lower, Dist.upper)[1]
-
+        y = quadgk(F, lower, upper)[1]
     else # Discrete distriubtion
-        x = ceil(Dist.lower)
+        x = ceil(lower)
         q_max = 1 - 1E-9;
-        x_max = min(Dist.upper, quantile(Dist.untruncated, q_max))
-
-        while x < x_max
+        x_max = min(upper, quantile(Dist.untruncated, q_max))
+        y = F(x)
+        while (x += 1) <= x_max
             y += F(x)
-            x += 1
         end
     end
     return y
