@@ -436,7 +436,7 @@ function parameter(key::Symbol,
                                               transform_parameterization_new, transform_new,
                                               prior_new, fixed, regimes, description, tex_label) #S
         elseif typeof(value) <: Vector
-            return UnscaledVectorParameter{V,T,U_new}(key, value, valuebounds_new,
+            return UnscaledVectorParameter{Vector,T,U_new}(key, value, valuebounds_new,
                                               transform_parameterization_new, transform_new,
                                               prior_new, fixed, regimes, description, tex_label)
         else
