@@ -388,16 +388,16 @@ and value `value`. If `scaling` is given, a `ScaledParameter` object
 is returned.
 """
 function parameter(key::Symbol,
-                   value::Union{T, V}, #value::Union{S,V},
-                   valuebounds::Interval{T} = (value,value),
-                   transform_parameterization::Interval{T} = (value,value),
+                   value::Union{Vector{T}, T}, #value::Union{S,V},
+                   valuebounds::Interval{T} = (value[1], value[1]),
+                   transform_parameterization::Interval{T} = (value[1],value[1]),
                    transform::U             = Untransformed(),
                    prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
                    fixed::Bool              = true,
                    scaling::Function        = identity,
                    regimes::Dict{Symbol,OrderedDict{Int64,Any}} = Dict{Symbol,OrderedDict{Int64,Any}}(),
                    description::String = "No description available.",
-                   tex_label::String = "") where {V<:Vector, T <: Real, U <:Transform} #{V<:Vector, S<:Real, T <: Float64, U <:Transform}
+                   tex_label::String = "") where {T <: Real, U <:Transform} #{V<:Vector, S<:Real, T <: Float64, U <:Transform}
 
     # If fixed=true, force bounds to match and leave prior as null.  We need to define new
     # variable names here because of lexical scoping.
@@ -454,6 +454,8 @@ function parameter(key::Symbol,
         end
     end
 end
+
+
 
 function parameter(key::Symbol,
                    value::Union{T1, V}, #value::Union{S,V},
