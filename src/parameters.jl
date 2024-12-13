@@ -497,7 +497,6 @@ function parameter_ad(key::Symbol,
 
     # If fixed=true, force bounds to match and leave prior as null.  We need to define new
     # variable names here because of lexical scoping.
-
     valuebounds_new = valuebounds
     transform_parameterization_new = transform_parameterization
     transform_new = transform
@@ -595,7 +594,7 @@ function parameter(p::UnscaledParameter{T,U}, newvalue::T) where {T <: Number, U
 end
 
 function parameter_ad(p::UnscaledParameterAD{S,T,U}, newvalue::Snew;
-                   change_value_type::Bool = false) where {S<:Real, Snew<:Real, T <: Number, U <: Transform}
+                      change_value_type::Bool = false) where {S<:Real, Snew<:Real, T <: Number, U <: Transform}
     p.fixed && return p    # if the parameter is fixed, don't change its value
     if !change_value_type && (typeof(p.value) != typeof(newvalue))
         error("Type of newvalue $(newvalue) does not match the type of the current value for parameter $(string(p.key)). Set keyword change_value_type = true if you want to overwrite the type of the parameter value.")
@@ -1173,8 +1172,10 @@ function update!(pvec::ParameterVector, values::AbstractVector{T};
         map!(tmp, pvec, pvec, values)
     else
         if typeof(pvec[1]) <: ParameterAD
+
             map!(parameter_ad, pvec, pvec, values[1:length(pvec)])
         else
+
             map!(parameter, pvec, pvec, values[1:length(pvec)])
         end
         # It is assumed that, if regime-switching, the regimes are toggled to regime 1 before calling update!
@@ -1190,10 +1191,12 @@ function update!(pvec::ParameterVector, values::AbstractVector{T};
                 if haskey(para.regimes, :value)
                     for key in keys(para.regimes[:value])
                         if key == 1
+
                             set_regime_val!(para, key, para.value)
                         else
                             # Note that set_regime_val! handles what to do if para is fixed, enforce valuebounds, etc.
                             i += 1
+
                             set_regime_val!(para, key, values[i])
                         end
                     end
