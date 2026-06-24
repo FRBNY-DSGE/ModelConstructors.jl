@@ -10,7 +10,12 @@ my_tests = [
             "statistics",
             "paths",
             "regimes",
-            "abstractmodel"
+            "abstractmodel",
+            "defaults",
+            "generic_model",
+            "linear_regression",
+            "observables",
+            "util"
             ]
 
 for test in my_tests
