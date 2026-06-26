@@ -1101,11 +1101,11 @@ for f in (:(Base.exp),
           :(Base.:<=),
           :(Base.:>=))
 
-    @eval ($f)(p::UnscaledOrSteadyState) = ($f)(p.value)
+    # UnscaledOrSteadyState methods are already defined by the loop above; here we
+    # only add the ScaledParameterAD (autodiff) variants.
     @eval ($f)(p::ScaledParameterAD) = ($f)(p.scaledvalue)
 
     if f != :(Base.:-)
-        @eval ($f)(p::UnscaledOrSteadyState, x::Number) = ($f)(p.value, x)
         @eval ($f)(p::ScaledParameterAD, x::Number) = ($f)(p.scaledvalue, x)
     end
 end
