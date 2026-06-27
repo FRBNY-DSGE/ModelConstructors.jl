@@ -1,5 +1,11 @@
 using Test, ModelConstructors, Dates, SparseArrays, BenchmarkTools
 
+# Set `run_benchmarks = false` before including this file (e.g. in the REPL or
+# runtests.jl) to skip the benchmarks for faster testing.
+if !@isdefined(run_benchmarks)
+    run_benchmarks = true
+end
+
 @testset "abbrev_symbol" begin
     @test ModelConstructors.abbrev_symbol(:abcdef) == "abcd"     # longer than default 4
     @test ModelConstructors.abbrev_symbol(:abc) == "abc"          # shorter than 4
@@ -108,11 +114,20 @@ end
 end
 
 @testset "verbose print" begin
+    # println/print write to stdout (not stderr), so @test_nowarn is appropriate: they
+    # print when verbose >= min and are silent otherwise.
     @test_nowarn println(:high, :low, "test message")
     @test_nowarn println(:low, :high, "suppressed message")
-    @test_nowarn ModelConstructors.info_print(:high, :low, "info message")
-    @test_nowarn ModelConstructors.warn_print(:high, :low, "warn message")
+
+    # info_print/warn_print emit @info/@warn (to stderr) when verbose >= min; @test_logs
+    # verifies the message is emitted at the expected level.
+    @test_logs (:info, "info message") ModelConstructors.info_print(:high, :low, "info message")
+    @test_logs (:warn, "warn message") ModelConstructors.warn_print(:high, :low, "warn message")
 end
 
-display(@benchmark ModelConstructors.abbrev_symbol(:abcdefgh))
-display(@benchmark ModelConstructors.detexify("αβγ"))
+if run_benchmarks
+    print("abbrev_symbol:                        ")
+    @btime ModelConstructors.abbrev_symbol(:abcdefgh)
+    print("detexify:                             ")
+    @btime ModelConstructors.detexify("αβγ")
+end

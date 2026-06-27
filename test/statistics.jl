@@ -1,4 +1,10 @@
-using ModelConstructors, Test, Random
+using ModelConstructors, Test, Random, BenchmarkTools
+
+# Set `run_benchmarks = false` before including this file (e.g. in the REPL or
+# runtests.jl) to skip the benchmarks for faster testing.
+if !@isdefined(run_benchmarks)
+    run_benchmarks = true
+end
 
 @testset "Prior computation" begin
     p = ParameterVector{Float64}(undef, 3)
@@ -91,6 +97,46 @@ end
     @test regime_val(p[2], 2) == 0.2
     @test regime_val(p[3], 1) == 0.4
     @test regime_val(p[3], 2) == out1[end]
+end
+
+@testset "posterior! with sampler=true (bounds handling)" begin
+    p = ParameterVector{Float64}(undef, 3)
+    p[1] = ModelConstructors.parameter(:a, 0.1, (0., 1.), (0., 1.), ModelConstructors.Untransformed(), Normal(0.5, 1.); fixed = false)
+    p[2] = ModelConstructors.parameter(:b, 0., (0., 1.), (0., 1.), ModelConstructors.Untransformed(), Normal(0.5, 1.); fixed = true)
+    p[3] = ModelConstructors.parameter(:c, 0.4, (0., 1.), (0., 1.), ModelConstructors.Untransformed(), Normal(0.25, 1.); fixed = false)
+
+    loglh = (x, data) -> 2.
+    data = rand(2, 2)
+
+    # In-bounds draw: exercises the sampler try/update! path and returns a finite posterior.
+    @test isfinite(posterior!(loglh, p, [0.2, 0.0, 0.5], data; sampler = true, ϕ_smc = 3.104))
+
+    # Out-of-bounds draw (a = 2.0 ∉ (0, 1)): update! throws ParamBoundsError, which the
+    # sampler path catches and converts to -Inf.
+    @test posterior!(loglh, p, [2.0, 0.0, 0.5], data; sampler = true) == -Inf
+
+    # A non-ParamBoundsError (here a length mismatch → BoundsError) is re-thrown, not
+    # swallowed into -Inf.
+    @test_throws BoundsError posterior!(loglh, p, [0.2, 0.0], data; sampler = true)
+end
+
+if run_benchmarks
+    # Fresh (non-regime-switching) ParameterVector so the benchmarks don't depend on the
+    # mutated test globals above.
+    bench_p = ParameterVector{Float64}(undef, 3)
+    bench_p[1] = ModelConstructors.parameter(:a, 0.1, (0., 1.), (0., 1.), ModelConstructors.Untransformed(), Normal(0.5, 1.); fixed = false)
+    bench_p[2] = ModelConstructors.parameter(:b, 0., (0., 1.), (0., 1.), ModelConstructors.Untransformed(), Normal(0.5, 1.); fixed = true)
+    bench_p[3] = ModelConstructors.parameter(:c, 0.4, (0., 1.), (0., 1.), ModelConstructors.Untransformed(), Normal(0.25, 1.); fixed = false)
+    bench_loglh = (x, data) -> 2.
+    bench_data = rand(2, 2)
+    bench_vals = ModelConstructors.get_values(bench_p)
+
+    print("prior:                                ")
+    @btime ModelConstructors.prior($bench_p)
+    print("posterior:                            ")
+    @btime posterior($bench_loglh, $bench_p, $bench_data; ϕ_smc = 3.104)
+    print("posterior!:                           ")
+    @btime posterior!($bench_loglh, $bench_p, $bench_vals, $bench_data; ϕ_smc = 3.104)
 end
 
 nothing

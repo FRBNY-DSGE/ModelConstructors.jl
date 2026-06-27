@@ -1,4 +1,10 @@
-using Test, ModelConstructors, Distributions, Dates, Nullables, Random
+using Test, ModelConstructors, Distributions, Dates, Nullables, Random, LinearAlgebra, BenchmarkTools
+
+# Set `run_benchmarks = false` before including this file (e.g. in the REPL or
+# runtests.jl) to skip the benchmarks for faster testing.
+if !@isdefined(run_benchmarks)
+    run_benchmarks = true
+end
 
 @testset "Ensure transformations to the real line/model space are valid" begin
     for T in subtypes(Transform)
@@ -184,7 +190,7 @@ end
 
 # Check parameters can be declared as vectors
 @testset "Test vector-valued parameters" begin
-    p = parameter(:test, ones(5), (0.0, 5.), (0., 5.0), Untransformed(), MvNormal(ones(5), ones(5)), fixed = false, scaling = x -> x/2)
+    p = parameter(:test, ones(5), (0.0, 5.), (0., 5.0), Untransformed(), MvNormal(ones(5), Diagonal(ones(5))), fixed = false, scaling = x -> x/2)
     @test all(ones(5) ./ 2 .== parameter(p, ones(5)).scaledvalue)
 end
 
@@ -236,6 +242,112 @@ end
     @test first(p[1:1]) == p.value[1]
     @test p[2:3] == p.value[2:3]
     @test -p == -p.value
+end
+
+@testset "rand from prior (non-regime-switching)" begin
+    Random.seed!(1234)
+    prand = ParameterVector{Float64}(undef, 3)
+    prand[1] = parameter(:a, 0.5, (0., 1.), (0., 1.), Untransformed(), Normal(0.5, 0.1); fixed = false)
+    prand[2] = parameter(:b, 0.3)  # fixed -> rand returns its value
+    # Tight bounds vs a wide prior force the resample (while) loop to execute.
+    prand[3] = parameter(:tight, 0.005, (0., 0.01), (0., 0.01), Untransformed(), Normal(0., 1.); fixed = false)
+
+    draw = rand(prand)
+    @test length(draw) == 3
+    @test draw[2] == 0.3                 # fixed parameter returns its value
+    @test 0. < draw[1] < 1.
+    @test 0. < draw[3] < 0.01            # resampled until within bounds
+end
+
+@testset "transform ParameterVector (non-regime-switching)" begin
+    ptrans = ParameterVector{Float64}(undef, 2)
+    ptrans[1] = parameter(:a, 0.5, (0., 1.), (0., 1.), ModelConstructors.SquareRoot(); fixed = false)
+    ptrans[2] = parameter(:b, 0.3, (0., 1.), (0., 1.), ModelConstructors.SquareRoot(); fixed = false)
+    vals = [0.5, 0.3]
+
+    real_from_vals = transform_to_real_line(ptrans, vals)   # map(transform_to_real_line, pvec, values)
+    real_from_pvec = transform_to_real_line(ptrans)         # map(transform_to_real_line, pvec)
+    model_vals     = transform_to_model_space(ptrans, real_from_vals)
+    @test model_vals ≈ vals
+    @test real_from_vals ≈ real_from_pvec
+end
+
+@testset "update! all-true indices and ParameterAD branches" begin
+    pct = ParameterVector{Float64}(undef, 2)
+    pct[1] = parameter(:a, 0.5, (0., 1.), (0., 1.), Untransformed(); fixed = false)
+    pct[2] = parameter(:b, 0.3, (0., 1.), (0., 1.), Untransformed(); fixed = false)
+    update!(pct, [0.7, 0.5], BitArray([true, true]))  # all(indices) -> current_vals = values
+    @test pct[1].value == 0.7
+
+    # ParameterAD vector: exercises the ParameterAD branches of update!, including the
+    # change_value_type path (only parameter_ad supports that keyword — the non-AD branch
+    # at parameters.jl:1169 calls parameter(...; change_value_type=...), which errors).
+    pad = ParameterVector{Float64}(undef, 2)
+    pad[1] = parameter_ad(:a, 0.5, (0., 1.), (0., 1.), Untransformed(); fixed = false)
+    pad[2] = parameter_ad(:b, 0.3, (0., 1.), (0., 1.), Untransformed(); fixed = false)
+    update!(pad, [0.6, 0.4])                            # map!(parameter_ad, ...)
+    @test pad[1].value == 0.6
+    update!(pad, [0.7, 0.5]; change_value_type = true)  # parameter_ad change_value_type branch
+    @test pad[1].value == 0.7
+end
+
+@testset "parameter_ad update without type change" begin
+    wad = parameter_ad(:moop, 3.0, (0., 10.), (0., 10.), Untransformed(); fixed = false)
+    @test parameter_ad(wad, 2.0).value == 2.0          # UnscaledParameterAD, same type, in bounds
+
+    wads = parameter_ad(:moop, 3.0, (0., 10.), (0., 10.), Untransformed(); fixed = false, scaling = x -> x / 2)
+    @test parameter_ad(wads, 2.0).value == 2.0         # ScaledParameterAD, same type, in bounds
+end
+
+@testset "vector-valued parameters (unscaled / AD / fixed)" begin
+    mvprior = MvNormal(ones(5), Diagonal(ones(5)))
+
+    # Unscaled vector parameter (non-AD): exercises the UnscaledVectorParameter branch.
+    uv = parameter(:uvec, ones(5), (0., 5.), (0., 5.), Untransformed(), mvprior; fixed = false)
+    @test uv.value == ones(5)
+
+    # parameter_ad vector variants: unscaled, scaled, and fixed.
+    uv_ad = parameter_ad(:uvec, ones(5), (0., 5.), (0., 5.), Untransformed(), mvprior; fixed = false)
+    @test uv_ad.value == ones(5)
+    sv_ad = parameter_ad(:svec, ones(5), (0., 5.), (0., 5.), Untransformed(), mvprior; fixed = false, scaling = x -> x / 2)
+    @test sv_ad.scaledvalue == ones(5) ./ 2
+    fv_ad = parameter_ad(:fvec, ones(5), (0., 5.), (0., 5.), Untransformed(), mvprior; fixed = true)
+    @test fv_ad.fixed
+
+    # Out-of-bounds update on a scaled vector parameter throws ParamBoundsError.
+    sv = parameter(:svec, ones(5), (0., 5.), (0., 5.), Untransformed(), mvprior; fixed = false, scaling = x -> x / 2)
+    @test_throws ParamBoundsError parameter(sv, fill(10.0, 5))
+end
+
+if run_benchmarks
+    # Parameter construction (scaled, with prior + transform).
+    print("parameter construction (scaled):      ")
+    @btime parameter(:β, 0.1402, (1e-5, 10.), (1e-5, 10.), ModelConstructors.Exponential(),
+                     GammaAlt(0.25, 0.1), fixed = false, scaling = x -> (1 + x / 100) \ 1)
+
+    # Transformations to/from the real line on a SquareRoot-transformed parameter.
+    bench_α = parameter(:α, 0.1596, (1e-5, 0.999), (1e-5, 0.999), ModelConstructors.SquareRoot(),
+                        Normal(0.30, 0.05), fixed = false)
+    print("transform_to_real_line:               ")
+    @btime transform_to_real_line($bench_α)
+    bench_real = transform_to_real_line(bench_α)
+    print("transform_to_model_space:             ")
+    @btime transform_to_model_space($bench_α, $bench_real)
+
+    # logpdf/pdf/update! over a length-100 ParameterVector.
+    bench_u = parameter(:bloop, 2.5230, (1e-8, 5.), (1e-8, 5.), ModelConstructors.SquareRoot(); fixed = true)
+    bench_v = parameter(:cat, 2.5230, (1e-8, 5.), (1e-8, 5.), ModelConstructors.Exponential(), Gamma(2.00, 0.1))
+    bench_pvec = ParameterVector{Float64}(undef, 100)
+    for ii in 1:length(bench_pvec)
+        bench_pvec[ii] = (ii % 2 == 0) ? bench_u : bench_v
+    end
+    bench_vals = ones(length(bench_pvec))
+    print("logpdf(ParameterVector, N=100):       ")
+    @btime logpdf($bench_pvec)
+    print("pdf(ParameterVector, N=100):          ")
+    @btime pdf($bench_pvec)
+    print("update!(ParameterVector, N=100):      ")
+    @btime update!($bench_pvec, $bench_vals)
 end
 
 nothing

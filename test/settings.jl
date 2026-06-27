@@ -1,3 +1,11 @@
+using Test, ModelConstructors, BenchmarkTools
+
+# Set `run_benchmarks = false` before including this file (e.g. in the REPL or
+# runtests.jl) to skip the benchmarks for faster testing.
+if !@isdefined(run_benchmarks)
+    run_benchmarks = true
+end
+
 m = GenericModel()
 settings = Dict{Symbol, Setting}()
 # settings - boolean, string, and number. adding to model. overwriting. filestrings. testing/not testing.
@@ -44,4 +52,19 @@ vint = m.settings[:data_vintage]
     @test m.test_settings[b].print == true
     @test m.test_settings[b].code == "abcd"
     @test m.test_settings[b].description == "b1"
+end
+
+if run_benchmarks
+    bench_m = GenericModel()
+    bench_m <= Setting(:n_mh_blocks, 22)
+    bench_m <= Setting(:data_vintage, "REF", true, "vint", "Date of data")
+
+    print("Setting construction (full):          ")
+    @btime Setting(:n_mh_blocks, 5, true, "mhbk", "Number of blocks for Metropolis-Hastings")
+    print("add setting to model (<=):            ")
+    @btime $bench_m <= Setting(:n_mh_blocks, 22)
+    print("get_setting:                          ")
+    @btime get_setting($bench_m, :n_mh_blocks)
+    print("filestring:                           ")
+    @btime ModelConstructors.filestring($bench_m)
 end

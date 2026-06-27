@@ -1,4 +1,10 @@
-using Test, ModelConstructors
+using Test, ModelConstructors, BenchmarkTools
+
+# Set `run_benchmarks = false` before including this file (e.g. in the REPL or
+# runtests.jl) to skip the benchmarks for faster testing.
+if !@isdefined(run_benchmarks)
+    run_benchmarks = true
+end
 
 # CURRENTLY ONLY TESTS VALUE, PRIOR, FIXED, AND VALUEBOUNDS SWITCHING, NO REGIME SWITCHING IN OTHER CASES
 # ALSO TESTS IF TRANSFORMS WORK CORRECTLY WITH REGIME-SWITCHING
@@ -159,6 +165,28 @@ end
     ModelConstructors.set_regime_fixed!(u, 3, false, d; update_valuebounds = (10., 11.))
     @test u.regimes[:valuebounds][1] == (10., 11.)
     @test u.regimes[:valuebounds][2] == (10., 11.)
+end
+
+if run_benchmarks
+    # Fresh regime-switching parameter / vector so the benchmarks don't depend on the
+    # heavily-mutated test globals above.
+    bench_u = parameter(:bloop, 2.5230, (1e-8, 5.), (1e-8, 5.), ModelConstructors.SquareRoot(); fixed = false)
+    ModelConstructors.set_regime_val!(bench_u, 1, 2.5230)
+    ModelConstructors.set_regime_val!(bench_u, 2, 1.0; override_bounds = true)
+    bench_uvec = ParameterVector{Float64}(undef, 2)
+    bench_uvec[1] = bench_u
+    bench_uvec[2] = bench_u
+
+    print("set_regime_val! (existing regime):    ")
+    @btime ModelConstructors.set_regime_val!($bench_u, 2, 1.0; override_bounds = true)
+    print("regime_val:                           ")
+    @btime ModelConstructors.regime_val($bench_u, 2)
+    print("toggle_regime!:                       ")
+    @btime ModelConstructors.toggle_regime!($bench_u, 1)
+    print("get_values (regime_switching):        ")
+    @btime ModelConstructors.get_values($bench_uvec)
+    print("transform_to_real_line (reg-switch):  ")
+    @btime transform_to_real_line($bench_uvec; regime_switching = true)
 end
 
 nothing

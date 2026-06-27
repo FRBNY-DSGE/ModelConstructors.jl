@@ -1,5 +1,11 @@
 using Test, ModelConstructors, Dates, BenchmarkTools
 
+# Set `run_benchmarks = false` before including this file (e.g. in the REPL or
+# runtests.jl) to skip the benchmarks for faster testing.
+if !@isdefined(run_benchmarks)
+    run_benchmarks = true
+end
+
 @testset "default_settings!" begin
     m = LinearRegression()
 
@@ -31,4 +37,7 @@ end
     @test isdir(m.test_settings[:saveroot].value)
 end
 
-display(@benchmark LinearRegression())
+if run_benchmarks
+    print("LinearRegression construction:        ")
+    @btime LinearRegression()
+end

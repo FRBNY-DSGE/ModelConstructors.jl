@@ -1,5 +1,11 @@
 using Test, ModelConstructors, BenchmarkTools
 
+# Set `run_benchmarks = false` before including this file (e.g. in the REPL or
+# runtests.jl) to skip the benchmarks for faster testing.
+if !@isdefined(run_benchmarks)
+    run_benchmarks = true
+end
+
 @testset "Observable construction" begin
     fwd = df -> df[:, :GDP]
     rev = x -> x
@@ -29,4 +35,7 @@ end
     @test po2.rev_transform === log
 end
 
-display(@benchmark PseudoObservable(:flex_output))
+if run_benchmarks
+    print("PseudoObservable construction:        ")
+    @btime PseudoObservable(:flex_output)
+end
