@@ -904,7 +904,9 @@ function transform_to_real_line(p::ParameterAD{S,<:Number,Exponential}, x::S = p
 end
 
 transform_to_real_line(pvec::ParameterVector, values::Vector{S}) where S  = map(transform_to_real_line, pvec, values)
-transform_to_real_line(pvec::ParameterVector{S}) where S = map(transform_to_real_line, pvec)
+# NOTE: the single-argument transform_to_real_line(pvec) is defined below as the
+# regime_switching=false branch of transform_to_real_line(pvec; regime_switching). A
+# separate `transform_to_real_line(pvec) = map(...)` here would just be overwritten by it.
 
 transform_to_real_line(p::Parameter{T,Untransformed}, x::T = p.value) where T = x
 function transform_to_real_line(p::Parameter{T,SquareRoot}, x::T = p.value) where T
