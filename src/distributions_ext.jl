@@ -239,7 +239,27 @@ Distributions.rand(d::DegenerateMvNormal; cc::T = 1.0) where T<:AbstractFloat
 Generate a draw from `d` with variance optionally scaled by `cc^2`.
 """
 function Distributions.rand(d::DegenerateMvNormal;  cc::T = 1.0) where T<:AbstractFloat
-    return d.μ + cc * d.σ * randn(length(d))
+    draw = d.μ + cc * d.σ * randn(length(d))
+    return pin_fixed_directions!(draw, d)
+end
+
+"""
+```
+pin_fixed_directions!(draw::Vector, d::DegenerateMvNormal)
+```
+Reset any zero-variance (fixed-parameter) direction of `draw` back to `d.μ`. When `d` was built
+from a covariance (`stdev = false`, so `d.cov` is `true` and `d.Σ` holds it), a fixed parameter has
+an exactly-zero covariance row/col, but tiny singular values leak a nonzero scale into `d.σ` — so a
+raw draw nudges the fixed parameter. Pinning it here (rather than zeroing `d.σ`) leaves the scale
+matrix that the MH mutation inverts untouched. No-op when the covariance is unavailable.
+"""
+function pin_fixed_directions!(draw::Vector, d::DegenerateMvNormal)
+    if d.cov && !isempty(d.Σ)
+        for i in findall(iszero, diag(d.Σ))
+            draw[i] = d.μ[i]
+        end
+    end
+    return draw
 end
 
 """

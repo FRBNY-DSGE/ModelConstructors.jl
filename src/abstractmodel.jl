@@ -421,7 +421,8 @@ rand(d::Union{DegenerateMvNormal,MvNormal}, m::AbstractModel; cc::AbstractFloat 
 Generate a draw from `d` with variance optionally scaled by `cc^2`.
 """
 function rand(d::Union{DegenerateMvNormal,MvNormal}, m::AbstractModel; cc::AbstractFloat = 1.0)
-    return d.μ + cc*d.σ*randn(m.rng, length(d))
+    draw = d.μ + cc*d.σ*randn(m.rng, length(d))
+    return d isa DegenerateMvNormal ? pin_fixed_directions!(draw, d) : draw
 end
 
 """
@@ -432,7 +433,8 @@ rand(d::Union{DegenerateMvNormal,MvNormal}, rng::MersenneTwister; cc::AbstractFl
 Generate a draw from `d` with variance optionally scaled by `cc^2`.
 """
 function rand(d::Union{DegenerateMvNormal,MvNormal}, rng::MersenneTwister; cc::AbstractFloat = 1.0)
-    return d.μ + cc*d.σ*randn(rng, length(d))
+    draw = d.μ + cc*d.σ*randn(rng, length(d))
+    return d isa DegenerateMvNormal ? pin_fixed_directions!(draw, d) : draw
 end
 
 """
