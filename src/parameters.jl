@@ -389,15 +389,15 @@ is returned.
 """
 function parameter(key::Symbol,
                    value::Union{Vector{T}, T}, #value::Union{S,V},
-                   valuebounds::Interval{T} = (value[1], value[1]),
-                   transform_parameterization::Interval{T} = (value[1],value[1]),
+                   valuebounds::Interval{T1} = (value[1], value[1]),
+                   transform_parameterization::Interval{T2} = (value[1],value[1]),
                    transform::U             = Untransformed(),
                    prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
                    fixed::Bool              = true,
                    scaling::Function        = identity,
                    regimes::Dict{Symbol,OrderedDict{Int64,Any}} = Dict{Symbol,OrderedDict{Int64,Any}}(),
                    description::String = "No description available.",
-                   tex_label::String = "") where {T <: Real, U <:Transform} #{V<:Vector, S<:Real, T <: Float64, U <:Transform}
+                   tex_label::String = "") where {T <: Real, T1 <: Real, T2 <: Real,  U <:Transform} #{V<:Vector, S<:Real, T <: Float64, U <:Transform}
 
     # If fixed=true, force bounds to match and leave prior as null.  We need to define new
     # variable names here because of lexical scoping.
@@ -436,7 +436,7 @@ function parameter(key::Symbol,
                                               transform_parameterization_new, transform_new,
                                               prior_new, fixed, regimes, description, tex_label) #S
         elseif typeof(value) <: Vector
-            return UnscaledVectorParameter{Vector,T,U_new}(key, value, valuebounds_new,
+            return UnscaledVectorParameter{typeof(value),T,U_new}(key, value, valuebounds_new,
                                               transform_parameterization_new, transform_new,
                                               prior_new, fixed, regimes, description, tex_label)
         else
@@ -448,7 +448,7 @@ function parameter(key::Symbol,
                                             transform_parameterization_new, transform_new,
                                             prior_new, fixed, scaling, regimes, description, tex_label)
         elseif typeof(value) <: Vector
-            return ScaledVectorParameter{V,T,U_new}(key, value, scaling(value), valuebounds_new,
+            return ScaledVectorParameter{typeof(value),T,U_new}(key, value, scaling(value), valuebounds_new,
                                             transform_parameterization_new, transform_new,
                                             prior_new, fixed, scaling, regimes, description, tex_label)
         end
