@@ -25,6 +25,7 @@ function set_regime_val!(p::Parameter{S},
         p.regimes[:value] = OrderedDict{Int,S}()
     end
 
+
     # First check if fixed and enforce valuebounds so
     # `set_regime_val!` mirrors `parameter(p::Parameter, newvalue::S)` functionality
     if haskey(p.regimes, :fixed) && haskey(p.regimes[:fixed], i) ? regime_fixed(p, i) : false
@@ -41,7 +42,7 @@ function set_regime_val!(p::Parameter{S},
         p.regimes[:value][i] = v
     elseif (p.valuebounds[1] <= v <= p.valuebounds[2]) || override_bounds
         p.regimes[:value][i] = v
-    elseif p.fixed
+    elseif p.fixed && regime_fixed(p,i)
         # When parameters are initialized as non-regime-switching and fixed,
         # the valuebounds is automatically set to (p.value, p.value).
         # Unless valuebounds are set to regime-switching, it is not possible
@@ -52,6 +53,7 @@ function set_regime_val!(p::Parameter{S},
                                "keyword `override_bounds` is set to `true`."))
     else
         throw(ParamBoundsError("New value of $(string(p.key)) ($(v)) is out of bounds ($(p.valuebounds))"))
+
     end
     return v
 end
@@ -324,7 +326,7 @@ function toggle_regime!(p::Parameter{S}, i::Int) where S <: Real
                     p.fixed = p.regimes[field][i]
                 end
             elseif haskey(p.regimes, field) && !haskey(p.regimes[field], i)
-                error("Regime $i for field $field not found")
+                error("Regime $i for field $field not found for parameter $(p.key)")
             end
         end
     end

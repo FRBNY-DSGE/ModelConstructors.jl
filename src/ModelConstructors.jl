@@ -4,7 +4,7 @@ module ModelConstructors
 
     using DataFrames, Dates, Distributed, Distributions
     using ForwardDiff, Nullables, Printf, Random
-    using LinearAlgebra, OrderedCollections, SpecialFunctions
+    using LinearAlgebra, OrderedCollections, SparseArrays, SpecialFunctions
 
     import Base.isempty, Base.<, Base.min, Base.max, Base.length, Base.iterate, Base.size
     import Base.sum, Base.getindex, Base.-

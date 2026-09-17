@@ -102,6 +102,34 @@ function (<=)(m::AbstractModel{T}, p::AbstractParameter{T}) where T
 end
 
 
+
+"""
+```
+(<=)(m::AbstractModel{T}, p::AbstractParameter{T}) where T
+```
+
+Syntax for adding a parameter to a model: m <= parameter.
+NOTE: If `p` is added to `m` and length(m.steady_state) > 0, `keys(m)` will not generate the
+index of `p` in `get_parameters(m)`.
+"""
+function (<=)(m::AbstractModel{T}, p::AbstractVectorParameter{V,T}) where {V,T}
+
+    if !in(p.key, keys(m.keys))
+
+        new_param_index = length(m.keys) + 1
+
+        # grow parameters and add the parameter
+        push!(get_parameters(m), p)
+
+        # add parameter location to dict
+        setindex!(m.keys, new_param_index, p.key)
+    else
+        # overwrite the previous parameter with the new one
+        setindex!(m, p, p.key)
+    end
+end
+
+
 """
 ```
 (<=)(m::AbstractModel{T}, ssp::Union{SteadyStateParameter,SteadyStateParameterArray}) where {T}
@@ -421,7 +449,8 @@ rand(d::Union{DegenerateMvNormal,MvNormal}, m::AbstractModel; cc::AbstractFloat 
 Generate a draw from `d` with variance optionally scaled by `cc^2`.
 """
 function rand(d::Union{DegenerateMvNormal,MvNormal}, m::AbstractModel; cc::AbstractFloat = 1.0)
-    return d.μ + cc*d.σ*randn(m.rng, length(d))
+    draw = d.μ + cc*d.σ*randn(m.rng, length(d))
+    return d isa DegenerateMvNormal ? pin_fixed_directions!(draw, d) : draw
 end
 
 """
@@ -432,7 +461,8 @@ rand(d::Union{DegenerateMvNormal,MvNormal}, rng::MersenneTwister; cc::AbstractFl
 Generate a draw from `d` with variance optionally scaled by `cc^2`.
 """
 function rand(d::Union{DegenerateMvNormal,MvNormal}, rng::MersenneTwister; cc::AbstractFloat = 1.0)
-    return d.μ + cc*d.σ*randn(rng, length(d))
+    draw = d.μ + cc*d.σ*randn(rng, length(d))
+    return d isa DegenerateMvNormal ? pin_fixed_directions!(draw, d) : draw
 end
 
 """

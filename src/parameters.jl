@@ -388,16 +388,16 @@ and value `value`. If `scaling` is given, a `ScaledParameter` object
 is returned.
 """
 function parameter(key::Symbol,
-                   value::Union{T, V}, #value::Union{S,V},
-                   valuebounds::Interval{T} = (value,value),
-                   transform_parameterization::Interval{T} = (value,value),
+                   value::Union{Vector{T}, T}, #value::Union{S,V},
+                   valuebounds::Interval{T1} = (value[1], value[1]),
+                   transform_parameterization::Interval{T2} = (value[1],value[1]),
                    transform::U             = Untransformed(),
                    prior::Union{NullableOrPriorUnivariate, NullableOrPriorMultivariate} = NullablePriorUnivariate();
                    fixed::Bool              = true,
                    scaling::Function        = identity,
                    regimes::Dict{Symbol,OrderedDict{Int64,Any}} = Dict{Symbol,OrderedDict{Int64,Any}}(),
                    description::String = "No description available.",
-                   tex_label::String = "") where {V<:Vector, T <: Real, U <:Transform} #{V<:Vector, S<:Real, T <: Float64, U <:Transform}
+                   tex_label::String = "") where {T <: Real, T1 <: Real, T2 <: Real,  U <:Transform} #{V<:Vector, S<:Real, T <: Float64, U <:Transform}
 
     # If fixed=true, force bounds to match and leave prior as null.  We need to define new
     # variable names here because of lexical scoping.
@@ -436,7 +436,7 @@ function parameter(key::Symbol,
                                               transform_parameterization_new, transform_new,
                                               prior_new, fixed, regimes, description, tex_label) #S
         elseif typeof(value) <: Vector
-            return UnscaledVectorParameter{V,T,U_new}(key, value, valuebounds_new,
+            return UnscaledVectorParameter{typeof(value),T,U_new}(key, value, valuebounds_new,
                                               transform_parameterization_new, transform_new,
                                               prior_new, fixed, regimes, description, tex_label)
         else
@@ -448,12 +448,14 @@ function parameter(key::Symbol,
                                             transform_parameterization_new, transform_new,
                                             prior_new, fixed, scaling, regimes, description, tex_label)
         elseif typeof(value) <: Vector
-            return ScaledVectorParameter{V,T,U_new}(key, value, scaling(value), valuebounds_new,
+            return ScaledVectorParameter{typeof(value),T,U_new}(key, value, scaling(value), valuebounds_new,
                                             transform_parameterization_new, transform_new,
                                             prior_new, fixed, scaling, regimes, description, tex_label)
         end
     end
 end
+
+
 
 function parameter(key::Symbol,
                    value::Union{T1, V}, #value::Union{S,V},
@@ -495,7 +497,6 @@ function parameter_ad(key::Symbol,
 
     # If fixed=true, force bounds to match and leave prior as null.  We need to define new
     # variable names here because of lexical scoping.
-
     valuebounds_new = valuebounds
     transform_parameterization_new = transform_parameterization
     transform_new = transform
@@ -593,7 +594,7 @@ function parameter(p::UnscaledParameter{T,U}, newvalue::T) where {T <: Number, U
 end
 
 function parameter_ad(p::UnscaledParameterAD{S,T,U}, newvalue::Snew;
-                   change_value_type::Bool = false) where {S<:Real, Snew<:Real, T <: Number, U <: Transform}
+                      change_value_type::Bool = false) where {S<:Real, Snew<:Real, T <: Number, U <: Transform}
     p.fixed && return p    # if the parameter is fixed, don't change its value
     if !change_value_type && (typeof(p.value) != typeof(newvalue))
         error("Type of newvalue $(newvalue) does not match the type of the current value for parameter $(string(p.key)). Set keyword change_value_type = true if you want to overwrite the type of the parameter value.")
@@ -904,7 +905,9 @@ function transform_to_real_line(p::ParameterAD{S,<:Number,Exponential}, x::S = p
 end
 
 transform_to_real_line(pvec::ParameterVector, values::Vector{S}) where S  = map(transform_to_real_line, pvec, values)
-transform_to_real_line(pvec::ParameterVector{S}) where S = map(transform_to_real_line, pvec)
+# NOTE: the single-argument transform_to_real_line(pvec) is defined below as the
+# regime_switching=false branch of transform_to_real_line(pvec; regime_switching). A
+# separate `transform_to_real_line(pvec) = map(...)` here would just be overwritten by it.
 
 transform_to_real_line(p::Parameter{T,Untransformed}, x::T = p.value) where T = x
 function transform_to_real_line(p::Parameter{T,SquareRoot}, x::T = p.value) where T
@@ -1101,11 +1104,11 @@ for f in (:(Base.exp),
           :(Base.:<=),
           :(Base.:>=))
 
-    @eval ($f)(p::UnscaledOrSteadyState) = ($f)(p.value)
+    # UnscaledOrSteadyState methods are already defined by the loop above; here we
+    # only add the ScaledParameterAD (autodiff) variants.
     @eval ($f)(p::ScaledParameterAD) = ($f)(p.scaledvalue)
 
     if f != :(Base.:-)
-        @eval ($f)(p::UnscaledOrSteadyState, x::Number) = ($f)(p.value, x)
         @eval ($f)(p::ScaledParameterAD, x::Number) = ($f)(p.scaledvalue, x)
     end
 end
@@ -1171,8 +1174,10 @@ function update!(pvec::ParameterVector, values::AbstractVector{T};
         map!(tmp, pvec, pvec, values)
     else
         if typeof(pvec[1]) <: ParameterAD
+
             map!(parameter_ad, pvec, pvec, values[1:length(pvec)])
         else
+
             map!(parameter, pvec, pvec, values[1:length(pvec)])
         end
         # It is assumed that, if regime-switching, the regimes are toggled to regime 1 before calling update!
@@ -1188,10 +1193,12 @@ function update!(pvec::ParameterVector, values::AbstractVector{T};
                 if haskey(para.regimes, :value)
                     for key in keys(para.regimes[:value])
                         if key == 1
+
                             set_regime_val!(para, key, para.value)
                         else
                             # Note that set_regime_val! handles what to do if para is fixed, enforce valuebounds, etc.
                             i += 1
+
                             set_regime_val!(para, key, values[i])
                         end
                     end
