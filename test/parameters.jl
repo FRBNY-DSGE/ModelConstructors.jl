@@ -24,7 +24,7 @@ a = 1e-8; b = 5.; c = 1.
 x = 2.5230
 cx = 2 * (x - (a+b)/2)/(b-a)
 toreal_answers[1] = 1. / (c * (x - a))
-toreal_answers[2] = (1/c) * (1. / (1. - cx^2)^(-3/2)) * (2/(b-a))
+toreal_answers[2] = (1/c) * (1. - cx^2)^(-3/2) * (2/(b-a))
 toreal_answers[3] = 1.
 x = transform_to_real_line(parameter(:σ_pist, 2.5230, (1e-8, 5.), (1e-8, 5.),
                                      ModelConstructors.Exponential(), fixed=false))
@@ -45,6 +45,31 @@ tomodel_answers[3] = 1.
             @test differentiate_transform_to_real_line(u,u.value) != differentiate_transform_to_model_space(u,u.value)
         end
     end
+end
+
+# Independent of the closed forms above: each derivative matches a central finite difference
+# of its transform, and the two are reciprocal (inverse-function rule). The SquareRoot
+# real-line derivative used to return (1 - cx^2)^(+3/2) * 2/(b-a).
+@testset "Transform derivatives match finite differences and are reciprocal" begin
+    for T in subtypes(Transform), (lo, hi, xs) in [(0.0, 1.0, (0.05, 0.3, 0.5, 0.9)),
+                                                   (1e-5, 0.999, (0.01, 0.5, 0.9)),
+                                                   (1e-8, 5.0, (0.1, 2.523, 4.9))]
+        p = parameter_ad(:θ, xs[1], (lo, hi), (lo, hi), T(), fixed = false)
+        for x in xs
+            h = 1e-6 * min(x - lo, hi - x)
+            fd_real = (transform_to_real_line(p, x + h) - transform_to_real_line(p, x - h)) / 2h
+            @test differentiate_transform_to_real_line(p, x) ≈ fd_real rtol = 1e-6
+            u = transform_to_real_line(p, x)
+            k = 1e-6 * max(1.0, abs(u))
+            fd_model = (transform_to_model_space(p, u + k) - transform_to_model_space(p, u - k)) / 2k
+            @test differentiate_transform_to_model_space(p, u) ≈ fd_model rtol = 1e-6
+            @test differentiate_transform_to_real_line(p, x) *
+                  differentiate_transform_to_model_space(p, u) ≈ 1.0 rtol = 1e-10
+        end
+    end
+    # the values quoted in SMC-TRANSFORM.md §1
+    p = parameter_ad(:θ, 0.3, (0.0, 1.0), (0.0, 1.0), ModelConstructors.SquareRoot(), fixed = false)
+    @test differentiate_transform_to_real_line(p, 0.3) ≈ 2 * 0.84^(-1.5)   # 2.598, was 1.540
 end
 
 @testset "Check type conversion for `value`, `valuebounds`, and `transform_parameterization`" begin

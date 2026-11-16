@@ -996,14 +996,14 @@ a scalar (default=1):
 Their gradients are therefore
 
 - Untransformed: `1`
-- SquareRoot:    `(1/c) * (1 / ( 1 - cx^2)^(-3/2)) * (2/(b-a))`
+- SquareRoot:    `(1/c) * (1 - cx^2)^(-3/2) * (2/(b-a))`
 - Exponential:   `1 / (c * (x - a))`
 """
 differentiate_transform_to_real_line(p::ParameterAD{S,<:Number,Untransformed}, x::S) where S = one(S)
 function differentiate_transform_to_real_line(p::ParameterAD{S,<:Number,SquareRoot}, x::S) where S
     (a,b), c = p.transform_parameterization, one(S)
     cx = 2 * (x - (a+b)/2)/(b-a)
-    (1/c) * (1 / (1 - cx^2)^(-3/2)) * (2/(b-a))
+    (1/c) * (1 - cx^2)^(-3/2) * (2/(b-a))
 end
 function differentiate_transform_to_real_line(p::ParameterAD{S,<:Number,Exponential}, x::S) where S
     (a,b), c = p.transform_parameterization, one(S)
