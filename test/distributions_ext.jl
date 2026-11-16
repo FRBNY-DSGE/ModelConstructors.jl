@@ -67,6 +67,33 @@ sᴸ = DegenerateMvNormal(o, Ls)
     @test logpdf(s, z) ≈ logpdf(sᴸ, z)
 end
 
+# cdf(::RootInverseGamma) used to return 2^(ν/2) for every x. x² ~ InverseGamma(ν/2, ντ²/2).
+@testset "cdf of RootInverseGamma" begin
+    for (ν, τ) in [(2.0, 0.5), (4.0, 0.1), (6.0, 2.0)]
+        d = RootInverseGamma(ν, τ)
+        @test cdf(d, 0.0) == 0.0
+        @test cdf(d, -1.0) == 0.0
+        xs = range(1e-3, 10τ; length = 50)
+        F = cdf.(Ref(d), xs)
+        @test all(0 .<= F .<= 1)
+        @test issorted(F)
+        @test cdf(d, 1e6) ≈ 1.0
+        for q in (0.05, 0.5, 0.95)
+            @test cdf(d, quantile(d, q)) ≈ q
+        end
+        # derivative of the cdf is the pdf
+        x0, h = 1.3τ, 1e-6τ
+        @test (cdf(d, x0 + h) - cdf(d, x0 - h)) / 2h ≈ pdf(d, x0) rtol = 1e-6
+    end
+    # ν = 2: x² ~ InverseGamma(1, τ²), so P(x ≤ u) = exp(-τ²/u²)
+    @test cdf(RootInverseGamma(2.0, 0.7), 1.1) ≈ exp(-0.7^2 / 1.1^2)
+    # agrees with the sampler
+    Random.seed!(1113)
+    d = RootInverseGamma(4.0, 0.3)
+    draws = [rand(d) for _ in 1:200_000]
+    @test isapprox(mean(draws .<= 0.35), cdf(d, 0.35); atol = 0.005)
+end
+
 if run_benchmarks
     # DegenerateMvNormal construction and logpdf across small/medium/large dimensions.
     print("DegenerateMvNormal construct (dim $i):  ")

@@ -167,6 +167,33 @@ end
     @test u.regimes[:valuebounds][2] == (10., 11.)
 end
 
+# logpdf(::Parameter) used to throw when a regime-switching prior dict had no entry for
+# some free regime (e.g. regime 1). Such regimes now use p.prior, as rand_regime_switching does.
+@testset "logpdf with a regime prior dict that lacks some regimes" begin
+    base = Normal(1.0, 2.0)
+    p = parameter(:rp, 0.5, (-10., 10.), (-10., 10.), ModelConstructors.Untransformed(),
+                  base; fixed = false)
+    for (r, v) in enumerate((0.5, 1.5, -0.3))
+        ModelConstructors.set_regime_val!(p, r, v)
+    end
+    ModelConstructors.set_regime_prior!(p, 2, Normal(0.0, 0.5))   # no entry for regimes 1 and 3
+    expected = logpdf(base, 0.5) + logpdf(Normal(0.0, 0.5), 1.5) + logpdf(base, -0.3)
+    @test logpdf(p) ≈ expected
+    pv = ParameterVector{Float64}(undef, 1); pv[1] = p
+    @test logpdf(pv) ≈ expected
+
+    # a fixed regime is still skipped
+    ModelConstructors.set_regime_fixed!(p, 3, true)
+    ModelConstructors.set_regime_fixed!(p, 1, false)
+    ModelConstructors.set_regime_fixed!(p, 2, false)
+    @test logpdf(p) ≈ logpdf(base, 0.5) + logpdf(Normal(0.0, 0.5), 1.5)
+
+    # full dict: unchanged
+    ModelConstructors.set_regime_prior!(p, 1, Normal(0.0, 1.0))
+    ModelConstructors.set_regime_prior!(p, 3, Normal(0.0, 1.0))
+    @test logpdf(p) ≈ logpdf(Normal(0.0, 1.0), 0.5) + logpdf(Normal(0.0, 0.5), 1.5)
+end
+
 if run_benchmarks
     # Fresh regime-switching parameter / vector so the benchmarks don't depend on the
     # heavily-mutated test globals above.

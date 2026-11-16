@@ -87,11 +87,14 @@ end
 Distributions.cdf(d::RootInverseGamma, x::T) where {T<:Real}
 ```
 
-Compute the cdf of a RootInverseGamma distribution at x.
+Compute the cdf of a RootInverseGamma distribution at x, using the relationship
+x² ~ InverseGamma(ν/2, ντ²/2) given in the docstring of `RootInverseGamma`
+(as `quantile` does). Returns 0 for x ≤ 0.
 """
 function Distributions.cdf(d::RootInverseGamma, x::T) where {T<:Real}
     (ν, τ) = params(d)
-    return 2^(ν/2)# * SpecialFunctions.gamma(ν/2, τ^2*ν/(4x^2)) / gamma(ν/2)
+    x <= zero(x) && return zero(float(T))
+    return cdf(InverseGamma(ν/2, ν*τ^2/2), x^2)
 end
 
 """
