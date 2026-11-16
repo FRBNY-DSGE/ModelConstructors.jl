@@ -1309,7 +1309,9 @@ function Distributions.logpdf(p::Parameter{T,U}) where {T, U}
         end
 
         if haskey(p.regimes, :prior) # does prior also regime switch?
-            return sum([logpdf(get(regime_prior(p, i)), regime_val(p, i)) for i in free_para_regimes])
+            # Regimes without their own entry use p.prior, as rand_regime_switching does.
+            return sum([logpdf(get(haskey(p.regimes[:prior], i) ? regime_prior(p, i) : p.prior),
+                               regime_val(p, i)) for i in free_para_regimes])
         else
             _prior = get(p.prior)
             return sum([logpdf(_prior, regime_val(p, i)) for i in free_para_regimes])
